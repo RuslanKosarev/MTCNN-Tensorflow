@@ -3,6 +3,7 @@ import os
 import random
 import sys
 import time
+import pathlib as plib
 
 import tensorflow as tf
 
@@ -31,8 +32,9 @@ def _get_output_filename(output_dir, name, net):
     #st = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     #return '%s/%s_%s_%s.tfrecord' % (output_dir, name, net, st)
     #return '%s/train_PNet_landmark.tfrecord' % (output_dir)
-    return '%s/neg_landmark.tfrecord' % (output_dir)
-    
+    #return '%s/neg_landmark.tfrecord' % (output_dir)
+    return '%s/%s_landmark.tfrecord' % (output_dir, name)
+
 
 def run(dataset_dir, net, output_dir, name='MTCNN', shuffling=False):
     """Runs the conversion operation.
@@ -68,12 +70,16 @@ def run(dataset_dir, net, output_dir, name='MTCNN', shuffling=False):
     # labels_to_class_names = dict(zip(range(len(_CLASS_NAMES)), _CLASS_NAMES))
     # dataset_utils.write_label_file(labels_to_class_names, dataset_dir)
     print('\nFinished converting the MTCNN dataset!')
+    print(tf_filename)
 
 
 def get_dataset(dir, net='PNet'):
     #item = 'imglists/PNet/train_%s_raw.txt' % net
     #item = 'imglists/PNet/train_%s_landmark.txt' % net
-    item = '%s/neg_%s.txt' % (net,net)
+
+    #item = '%s/neg_%s.txt' % (net,net)
+    item = '%s/%s_48.txt' % (net, name)
+
     #print(item)
     dataset_dir = os.path.join(dir, item)
     imagelist = open(dataset_dir, 'r')
@@ -124,6 +130,11 @@ def get_dataset(dir, net='PNet'):
 
 if __name__ == '__main__':
     dir = '../../DATA/'
-    net = '48'
-    output_directory = '../../DATA/imglists/ONet'
-    run(dir, net, output_directory, shuffling=True)
+    net = 'no_LM48'
+    output_directory = plib.Path('../../DATA/imglists/ONet')
+
+    if not output_directory.exists():
+        output_directory.mkdir()
+
+    for name in ('pos', 'neg', 'part', 'landmark'):
+        run(dir, net, output_directory, name, shuffling=True)

@@ -39,7 +39,6 @@ def getDataFromTxt(txt,data_path, with_landmark=True):
             landmark: [(x1, y1), (x2, y2), ...]
     """
 
-
     with open(txt, 'r') as fd:
         lines = fd.readlines()
 

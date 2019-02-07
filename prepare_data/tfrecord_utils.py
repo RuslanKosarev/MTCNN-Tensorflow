@@ -180,6 +180,10 @@ def _process_image_withoutcoder(filename):
     image = cv2.imread(filename)
     #print(type(image))
     # transform data into string format
+
+    if image is None:
+        raise ValueError('probably image {} does not exist'.format(filename))
+
     image_data = image.tostring()
     assert len(image.shape) == 3
     height = image.shape[0]

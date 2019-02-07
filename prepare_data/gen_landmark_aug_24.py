@@ -11,11 +11,6 @@ import random
 import tensorflow as tf
 import sys
 import numpy.random as npr
-dstdir = "../../DATA/24/train_RNet_landmark_aug"
-OUTPUT = '../../DATA/24'
-if not exists(OUTPUT): os.mkdir(OUTPUT)
-if not exists(dstdir): os.mkdir(dstdir)
-assert(exists(dstdir) and exists(OUTPUT))
 
 
 def IoU(box, boxes):
@@ -39,13 +34,16 @@ def IoU(box, boxes):
     yy1 = np.maximum(box[1], boxes[:, 1])
     xx2 = np.minimum(box[2], boxes[:, 2])
     yy2 = np.minimum(box[3], boxes[:, 3])
-     # compute the width and height of the bounding box
+
+    # compute the width and height of the bounding box
     w = np.maximum(0, xx2 - xx1 + 1)
     h = np.maximum(0, yy2 - yy1 + 1)
     inter = w * h
     ovr = inter*1.0 / (box_area + area - inter)
     return ovr
-def GenerateData(ftxt, output,net,argument=False):
+
+
+def GenerateData(ftxt, data_path, net, argument=False):
     if net == "PNet":
         size = 12
     elif net == "RNet":
@@ -55,13 +53,15 @@ def GenerateData(ftxt, output,net,argument=False):
     else:
         print('Net type error')
         return
+
     image_id = 0
-    f = open(join(OUTPUT,"landmark_%s_aug.txt" %(size)),'w')
-    data = getDataFromTxt(ftxt)
+    f = open(join(OUTPUT, "landmark_%s_aug.txt" % size), 'w')
+    data = getDataFromTxt(ftxt, data_path=data_path)
     idx = 0
-    #image_path bbox landmark(5*2)
+
+    # image_path bbox landmark(5*2)
     for (imgPath, bbox, landmarkGt) in data:
-        #print imgPath
+        print(imgPath)
         F_imgs = []
         F_landmarks = []        
         img = cv2.imread(imgPath)
@@ -178,14 +178,25 @@ def GenerateData(ftxt, output,net,argument=False):
     #shuffle_in_unison_scary(F_imgs, F_landmarks)
     
     f.close()
-    return F_imgs,F_landmarks
+    return F_imgs, F_landmarks
 
 
 if __name__ == '__main__':
+
+    dstdir = "../../DATA/24/train_RNet_landmark_aug"
+    OUTPUT = '../../DATA/24'
+    data_path = '../../DATA'
+
+    if not exists(dstdir):
+        os.mkdir(dstdir)
+
+    if not exists(OUTPUT):
+        os.mkdir(OUTPUT)
+
+    assert (exists(dstdir) and exists(OUTPUT))
+
     # train data
     net = "RNet"
-    #train_txt = "train.txt"
+
     train_txt = "trainImageList.txt"
-    imgs,landmarks = GenerateData(train_txt, OUTPUT,net,argument=True)
-    
-   
+    imgs, landmarks = GenerateData(train_txt, data_path, net, argument=True)

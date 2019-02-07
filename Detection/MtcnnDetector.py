@@ -9,12 +9,11 @@ from Detection.nms import py_nms
 
 
 class MtcnnDetector(object):
-
     def __init__(self,
                  detectors,
                  min_face_size=20,
                  stride=2,
-                 threshold=[0.6, 0.7, 0.7],
+                 threshold=(0.6, 0.7, 0.7),
                  scale_factor=0.79,
                  # scale_factor=0.709,#change
                  slide_window=False):
@@ -365,7 +364,7 @@ class MtcnnDetector(object):
         boxes = None
         t = time.time()
 
-        # pnet
+        # Pnet
         t1 = 0
         if self.pnet_detector:
             boxes, boxes_c, _ = self.detect_pnet(img)

@@ -12,9 +12,7 @@ from prepare_data.Landmark_utils import rotate, flip
 from prepare_data.utils import IoU
 
 
-
-
-def GenerateData(ftxt,data_path,net,argument=False):
+def GenerateData(ftxt, data_path, net, argument=False):
     '''
 
     :param ftxt: name/path of the text file that contains image path,
@@ -39,7 +37,7 @@ def GenerateData(ftxt,data_path,net,argument=False):
     f = open(join(OUTPUT,"landmark_%s_aug.txt" %(size)),'w')
     #dstdir = "train_landmark_few"
     # get image path , bounding box, and landmarks from file 'ftxt'
-    data = getDataFromTxt(ftxt,data_path=data_path)
+    data = getDataFromTxt(ftxt, data_path=data_path)
     idx = 0
     #image_path bbox landmark(5*2)
     for (imgPath, bbox, landmarkGt) in data:
@@ -49,8 +47,10 @@ def GenerateData(ftxt,data_path,net,argument=False):
         #print(imgPath)
         img = cv2.imread(imgPath)
 
-        assert(img is not None)
-        img_h,img_w,img_c = img.shape
+        if img is None:
+            raise ValueError('image {} is None'.format(imgPath))
+
+        img_h, img_w, img_c = img.shape
         gt_box = np.array([bbox.left,bbox.top,bbox.right,bbox.bottom])
         #get sub-image from bbox
         f_face = img[bbox.top:bbox.bottom+1,bbox.left:bbox.right+1]
@@ -175,19 +175,21 @@ def GenerateData(ftxt,data_path,net,argument=False):
     f.close()
     return F_imgs,F_landmarks
 
+
 if __name__ == '__main__':
     dstdir = "../../DATA/12/train_PNet_landmark_aug"
     OUTPUT = '../../DATA/12'
     data_path = '../../DATA'
+
     if not exists(OUTPUT):
         os.mkdir(OUTPUT)
     if not exists(dstdir):
         os.mkdir(dstdir)
     assert (exists(dstdir) and exists(OUTPUT))
+
     # train data
     net = "PNet"
-    #the file contains the names of all the landmark training data
+
+    # the file contains the names of all the landmark training data
     train_txt = "trainImageList.txt"
-    imgs,landmarks = GenerateData(train_txt,data_path,net,argument=True )
-    
-   
+    imgs, landmarks = GenerateData(train_txt, data_path, net, argument=True )

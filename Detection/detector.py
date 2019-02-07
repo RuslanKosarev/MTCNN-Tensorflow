@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 
 
-
 class Detector(object):
     #net_factory:rnet or onet
     #datasize:24 or 48

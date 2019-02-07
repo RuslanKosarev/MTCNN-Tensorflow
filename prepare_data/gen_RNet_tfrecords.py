@@ -79,7 +79,7 @@ def get_dataset(dir, name, net='PNet'):
     '''
     #item = 'imglists/PNet/train_%s_raw.txt' % net
     #item = 'imglists/PNet/train_%s_landmark.txt' % net
-    item = '%s/%s_24.txt' % (net,name)
+    item = '%s/%s_24.txt' % (net, name)
 
     dataset_dir = os.path.join(dir, item)
     print('dataset dir is :', dataset_dir)
@@ -135,5 +135,6 @@ if __name__ == '__main__':
     output_directory = '../../DATA/imglists_noLM/RNet'
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
-    name = 'part'
-    run(dir, net, output_directory,name, shuffling=True)
+
+    name ='landmark' #'part' 'pos' 'neg'
+    run(dir, net, output_directory, name, shuffling=True)

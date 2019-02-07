@@ -10,12 +10,6 @@ import numpy.random as npr
 from prepare_data.BBox_utils import getDataFromTxt, BBox
 from prepare_data.Landmark_utils import rotate, flip
 
-dstdir = "../../DATA/48/train_ONet_landmark_aug"
-OUTPUT = '../../DATA/48'
-if not exists(OUTPUT): os.mkdir(OUTPUT)
-if not exists(dstdir): os.mkdir(dstdir)
-assert(exists(dstdir) and exists(OUTPUT))
-
 def IoU(box, boxes):
     """Compute IoU between detect box and gt boxes
 
@@ -43,7 +37,8 @@ def IoU(box, boxes):
     inter = w * h
     ovr = inter*1.0 / (box_area + area - inter)
     return ovr
-def GenerateData(ftxt, output,net,argument=False):
+
+def GenerateData(ftxt, data_path, net,argument=False):
     if net == "PNet":
         size = 12
     elif net == "RNet":
@@ -55,7 +50,7 @@ def GenerateData(ftxt, output,net,argument=False):
         return
     image_id = 0
     f = open(join(OUTPUT,"landmark_%s_aug.txt" %(size)),'w')
-    data = getDataFromTxt(ftxt)
+    data = getDataFromTxt(ftxt, data_path=data_path)
     idx = 0
     #image_path bbox landmark(5*2)
     for (imgPath, bbox, landmarkGt) in data:
@@ -179,12 +174,23 @@ def GenerateData(ftxt, output,net,argument=False):
     return F_imgs,F_landmarks
 
 
-
 if __name__ == '__main__':
+
+    dstdir = "../../DATA/48/train_ONet_landmark_aug"
+    OUTPUT = '../../DATA/48'
+    data_path = '../../DATA'
+
+    if not exists(OUTPUT):
+        os.mkdir(OUTPUT)
+
+    if not exists(dstdir):
+        os.mkdir(dstdir)
+    assert (exists(dstdir) and exists(OUTPUT))
+
     # train data
     net = "ONet"
     #train_txt = "train.txt"
     train_txt = "trainImageList.txt"
-    imgs,landmarks = GenerateData(train_txt, OUTPUT,net,argument=True)
+    imgs,landmarks = GenerateData(train_txt, data_path, net, argument=True)
     #WriteToTfrecord(imgs,landmarks,net)
    
