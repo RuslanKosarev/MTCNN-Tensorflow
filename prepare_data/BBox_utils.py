@@ -31,7 +31,8 @@ def drawLandmark(img, bbox, landmark):
         cv2.circle(img, (int(x), int(y)), 2, (0,255,0), -1)
     return img
 
-def getDataFromTxt(txt,data_path, with_landmark=True):
+
+def read_text_file(ftxt, with_landmark=True):
     """
         Generate data from txt file
         return [(img_path, bbox, landmark)]
@@ -39,36 +40,27 @@ def getDataFromTxt(txt,data_path, with_landmark=True):
             landmark: [(x1, y1), (x2, y2), ...]
     """
 
-    with open(txt, 'r') as fd:
-        lines = fd.readlines()
+    with ftxt.open() as f:
+        lines = [a.strip() for a in f]
 
-    result = []
+    output = []
+
     for line in lines:
-        line = line.strip()
-        components = line.split(' ')
-        img_path = os.path.join(data_path, components[0]).replace('\\','/') # file path
+        parts = line.split(' ')
+        img_path = ftxt.parent.joinpath(parts[0].replace('\\', os.sep))
 
         # bounding box, (x1, y1, x2, y2)
-        #bbox = (components[1], components[2], components[3], components[4])
-        bbox = (components[1], components[3], components[2], components[4])        
-        bbox = [float(_) for _ in bbox]
-        bbox = list(map(int,bbox))
+        bbox = [int(_) for _ in (parts[1], parts[3], parts[2], parts[4])]
+
         # landmark
-        if not with_landmark:
-            result.append((img_path, BBox(bbox)))
-            continue
-        landmark = np.zeros((5, 2))
-        for index in range(0, 5):
-            rv = (float(components[5+2*index]), float(components[5+2*index+1]))
-            landmark[index] = rv
-        #normalize
-        '''
-        for index, one in enumerate(landmark):
-            rv = ((one[0]-bbox[0])/(bbox[2]-bbox[0]), (one[1]-bbox[1])/(bbox[3]-bbox[1]))
-            landmark[index] = rv
-        '''
-        result.append((img_path, BBox(bbox), landmark))
-    return result
+        if with_landmark:
+            landmarks = np.array([float(_) for _ in parts[5:]]).reshape(5, 2)
+            output.append((img_path, BBox(bbox), landmarks))
+        else:
+            output.append((img_path, BBox(bbox)))
+
+    return output
+
 
 def getPatch(img, bbox, point, padding):
     """

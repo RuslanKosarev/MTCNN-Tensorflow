@@ -3,7 +3,7 @@ __author__ = 'Ruslan N. Kosarev'
 
 import os
 import pathlib as plib
-from prepare_data.generate import generate12
+from prepare_data.generate import generate12, GenerateData
 
 
 class WiderData:
@@ -27,8 +27,9 @@ class WiderOutput:
         self.posdir = self.outdir.joinpath('positive')
         self.negdir = self.outdir.joinpath('negative')
         self.partdir = self.outdir.joinpath('part')
+        self.landmark = self.outdir.joinpath('train_PNet_landmark_aug')
 
-        for dir in (self.posdir, self.negdir, self.partdir):
+        for dir in (self.posdir, self.negdir, self.partdir, self.landmark):
             if not dir.exists():
                 dir.mkdir(parents=True)
 
@@ -37,8 +38,28 @@ class WiderOutput:
         self.parttxt = self.partdir.parent.joinpath('part_12.txt')
 
 
+class LandmarkData:
+    def __init__(self, dir=None):
+        if dir is not None:
+            self.dir = plib.Path(dir).absolute()
+        else:
+            self.dir = plib.Path(os.pardir).joinpath('data/FacialLandmarks').absolute()
+        self.annotations = self.dir.joinpath('trainImageList.txt')
+
+
+class LandmarkOutput:
+    def __init__(self):
+        self.dir = plib.Path(os.pardir).joinpath('data/12').absolute()
+        self.files = self.dir.joinpath('train_PNet_landmark_aug')
+        self.annotations = self.dir.joinpath('landmark_12_aug.txt')
+
+
 if __name__ == '__main__':
     input = WiderData()
     output = WiderOutput()
-
     generate12(input, output)
+
+    # the database contains the names of all the landmark training data
+    input2 = LandmarkData()
+    output2 = LandmarkOutput()
+    GenerateData(input2, output2, 'Pnet', argument=True)
