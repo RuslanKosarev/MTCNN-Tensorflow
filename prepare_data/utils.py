@@ -53,3 +53,12 @@ def convert_to_square(bbox):
     square_bbox[:, 2] = square_bbox[:, 0] + max_side - 1
     square_bbox[:, 3] = square_bbox[:, 1] + max_side - 1
     return square_bbox
+
+
+def readlines(filename, strip=True):
+    with filename.open() as f:
+        if strip is True:
+            lines = [a.strip() for a in f]
+        else:
+            lines = f.readlines()
+    return lines
