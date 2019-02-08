@@ -32,7 +32,7 @@ def drawLandmark(img, bbox, landmark):
     return img
 
 
-def read_text_file(ftxt, with_landmark=True):
+def read_bbox_data(ftxt, with_landmark=True):
     """
         Generate data from txt file
         return [(img_path, bbox, landmark)]
