@@ -12,7 +12,7 @@ from train_models.MTCNN_config import config
 
 sys.path.append("../prepare_data")
 print(sys.path)
-from prepare_data.read_tfrecord_v2 import read_multi_tfrecords, read_single_tfrecord
+from prepare_data.read_tfrecords import read_multi_tfrecords, read_single_tfrecord
 
 import random
 import cv2

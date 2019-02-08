@@ -47,6 +47,7 @@ def read_single_tfrecord(tfrecord_file, batch_size, net):
     landmark = tf.reshape(landmark,[batch_size,10])
     return image, label, roi,landmark
 
+
 def read_multi_tfrecords(tfrecord_files, batch_sizes, net):
     pos_dir,part_dir,neg_dir,landmark_dir = tfrecord_files
     pos_batch_size,part_batch_size,neg_batch_size,landmark_batch_size = batch_sizes
@@ -70,7 +71,8 @@ def read_multi_tfrecords(tfrecord_files, batch_sizes, net):
     print( rois.get_shape())
     landmarks = tf.concat([pos_landmark,part_landmark,neg_landmark,landmark_landmark],0,name="concat/landmark")
     return images,labels,rois,landmarks
-    
+
+
 def read():
     BATCH_SIZE = 64
     net = 'PNet'
