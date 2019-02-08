@@ -175,21 +175,19 @@ def _process_image(filename, coder):
     assert image.shape[2] == 3
 
     return image_data, height, width
-def _process_image_withoutcoder(filename):
-    #print(filename)
-    image = cv2.imread(filename)
-    #print(type(image))
-    # transform data into string format
 
+
+def process_image_without_coder(filename):
+    image = cv2.imread(str(filename))
     if image is None:
-        raise ValueError('probably image {} does not exist'.format(filename))
+        raise IOError('file {}'.format(filename))
 
     image_data = image.tostring()
     assert len(image.shape) == 3
     height = image.shape[0]
     width = image.shape[1]
     assert image.shape[2] == 3
-    # return string data and initial height and width of the image
+
     return image_data, height, width
 
 
