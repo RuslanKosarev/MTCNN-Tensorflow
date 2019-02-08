@@ -1,15 +1,15 @@
-#coding:utf-8
+# coding:utf-8
 
 import tensorflow as tf
 import numpy as np
 import cv2
 import os
-#just for RNet and ONet, since I change the method of making tfrecord
-#as for PNet
+
+
 def read_single_tfrecord(tfrecord_file, batch_size, net):
     # generate a input queue
     # each epoch shuffle
-    filename_queue = tf.train.string_input_producer([tfrecord_file],shuffle=True)
+    filename_queue = tf.train.string_input_producer([str(tfrecord_file)], shuffle=True)
     # read tfrecord
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(filename_queue)
