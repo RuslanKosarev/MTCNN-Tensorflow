@@ -2,12 +2,13 @@
 __author__ = 'Ruslan N. Kosarev'
 
 import os
+import sys
 import cv2
 import numpy as np
 import random
 import pathlib as lib
-from prepare_data.utils import IoU
-from prepare_data.BBox_utils import read_text_file, BBox
+from prepare_data.utils import IoU, readlines
+from prepare_data.BBox_utils import read_bbox_data, BBox
 from prepare_data.Landmark_utils import rotate, flip
 
 
@@ -73,7 +74,7 @@ def generate12(input, output):
                 if not cv2.imwrite(save_file.as_posix(), resized):
                     raise IOError('file {} has not been written'.format(save_file))
 
-                text = os.path.join(output.negdir.name, '{}.jpg 0\n'.format(n_idx))
+                text = os.path.join(output.negdir.name, save_file.name) + ' 0\n'
                 fneg.write(text)
                 n_idx += 1
                 neg_num += 1
@@ -121,7 +122,7 @@ def generate12(input, output):
                     if not cv2.imwrite(save_file.as_posix(), resized):
                         raise IOError('file {} has not been written'.format(save_file))
 
-                    text = os.path.join(output.negdir.name, '{}.jpg 0\n'.format(n_idx))
+                    text = os.path.join(output.negdir.name, save_file.name) + ' 0\n'
                     fneg.write(text)
 
                     n_idx += 1
@@ -134,7 +135,6 @@ def generate12(input, output):
 
                 # delta here is the offset of box center
                 if w < 5:
-                    print(w)
                     continue
                 # print (box)
                 delta_x = np.random.randint(-0.2*w, 0.2*w)
@@ -167,11 +167,11 @@ def generate12(input, output):
                 box_ = box.reshape(1, -1)
                 iou = IoU(crop_box, box_)
                 if iou >= 0.65:
-                    save_file = output.posdir.joinpath('{}.jpg'.format(idx))
+                    save_file = output.posdir.joinpath('{}.jpg'.format(p_idx))
                     if not cv2.imwrite(save_file.as_posix(), resized):
                         raise IOError('file {} has not been written'.format(save_file))
 
-                    text = os.path.join(output.posdir.name, '{}.jpg'.format(p_idx)) + \
+                    text = os.path.join(output.posdir.name, save_file.name) + \
                         ' 1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(p_idx, offset_x1, offset_y1, offset_x2, offset_y2)
                     fpos.write(text)
                     p_idx += 1
@@ -180,14 +180,16 @@ def generate12(input, output):
                     if not cv2.imwrite(save_file.as_posix(), resized):
                         raise IOError('file {} has not been written'.format(save_file))
 
-                    text = os.path.join(output.partdir.name, '{}.jpg'.format(d_idx)) + \
+                    text = os.path.join(output.partdir.name, save_file.name) + \
                         ' -1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(d_idx, offset_x1, offset_y1, offset_x2, offset_y2)
                     fpart.write(text)
                     d_idx += 1
 
             box_idx += 1
-            if idx % 100 == 0:
-                print("%s images done, pos: %s part: %s neg: %s" % (idx, p_idx, d_idx, n_idx))
+
+        if idx % 100 == 0:
+            sys.stdout.write('\r{} images done, pos: {} part: {} neg: {}'.format(idx, p_idx, d_idx, n_idx))
+        sys.stdout.flush()
 
     print('{} images done, pos: {} part: {} neg: {}'.format(idx, p_idx, d_idx, n_idx))
 
@@ -211,7 +213,7 @@ def GenerateData(input, output, net, argument=False):
     size = 12
     image_id = 0
 
-    data = read_text_file(input.annotations)
+    data = read_bbox_data(input.annotations)
 
     idx = 0
     f = open(output.annotations.as_posix(), 'w')
@@ -346,3 +348,40 @@ def GenerateData(input, output, net, argument=False):
                 image_id += 1
 
     f.close()
+
+
+def gen_imglist(data_dir):
+
+    size = 12
+    net = 'PNet'
+
+    # with open(data_dir.joinpath('pos_12.txt').as_posix(), 'r') as f:
+    #     pos = f.readlines()
+
+    pos = readlines(data_dir.joinpath('pos_12.txt'), strip=False)
+    neg = readlines(data_dir.joinpath('neg_12.txt'), strip=False)
+    part = readlines(data_dir.joinpath('part_12.txt'), strip=False)
+    landmark = readlines(data_dir.joinpath('landmark_12_aug.txt'), strip=False)
+
+    filename = data_dir.joinpath('train_landmark.txt')
+    if not filename.parent.exists():
+        filename.parent.mkdir(parents=True)
+
+    with filename.open('w') as f:
+        nums = [len(neg), len(pos), len(part)]
+        ratio = [3, 1, 1]
+
+        # base_num = min(nums)
+        base_num = 250000
+        print(len(neg), len(pos), len(part), base_num)
+
+        def write_output(fout, samples, size):
+            for sample in np.random.choice(samples, size=size, replace=True):
+                fout.write(sample)
+
+        write_output(f, neg, min([3*base_num, len(neg)]))
+        write_output(f, pos, base_num)
+        write_output(f, part, base_num)
+
+        for item in landmark:
+            f.write(item)

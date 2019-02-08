@@ -6,6 +6,7 @@ from datetime import datetime
 import numpy as np
 import tensorflow as tf
 from tensorboard.plugins import projector
+from prepare_data.utils import readlines
 
 from train_models.MTCNN_config import config
 
@@ -96,7 +97,7 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train(net_factory, prefix, end_epoch, base_dir, display=200, base_lr=0.01):
+def train(type, net_factory, prefix, end_epoch, base_dir, display=100, base_lr=0.01):
     """
     train PNet/RNet/ONet
     :param net_factory:
@@ -107,23 +108,25 @@ def train(net_factory, prefix, end_epoch, base_dir, display=200, base_lr=0.01):
     :param base_lr:
     :return:
     """
-    net = prefix.split('/')[-1]
+    #net = prefix.split('/')[-1]
     # label file
-    label_file = os.path.join(base_dir, 'train_%s_landmark.txt' % net)
-    # label_file = os.path.join(base_dir,'landmark_12_few.txt')
-    print(label_file)
-    f = open(label_file, 'r')
+    label_file = base_dir.joinpath('train_landmark.txt')
+    #print(label_file)
+    #f = open(label_file, 'r')
     # get number of training examples
-    num = len(f.readlines())
+
+    lines = readlines(label_file)
+    num = len(lines)
     print("Total size of the dataset is: ", num)
     print(prefix)
 
     # PNet use this method to get data
-    if net == 'PNet':
-        # dataset_dir = os.path.join(base_dir,'train_%s_ALL.tfrecord_shuffle' % net)
-        dataset_dir = os.path.join(base_dir, 'train_%s_landmark.tfrecord_shuffle' % net)
+    if type == 'PNet':
+        dataset_dir = prefix.joinpath('train_PNet_landmark.tfrecord')
         print('dataset dir is:', dataset_dir)
-        image_batch, label_batch, bbox_batch, landmark_batch = read_single_tfrecord(dataset_dir, config.BATCH_SIZE, net)
+        image_batch, label_batch, bbox_batch, landmark_batch = read_single_tfrecord(dataset_dir,
+                                                                                    config.BATCH_SIZE,
+                                                                                    type)
 
     # RNet use 3 tfrecords to get data
     else:
@@ -152,12 +155,12 @@ def train(net_factory, prefix, end_epoch, base_dir, display=200, base_lr=0.01):
         image_batch, label_batch, bbox_batch, landmark_batch = read_multi_tfrecords(dataset_dirs, batch_sizes, net)
 
         # landmark_dir
-    if net == 'PNet':
+    if type == 'PNet':
         image_size = 12
         radio_cls_loss = 1.0
         radio_bbox_loss = 0.5
         radio_landmark_loss = 0.5
-    elif net == 'RNet':
+    elif type == 'RNet':
         image_size = 24
         radio_cls_loss = 1.0
         radio_bbox_loss = 0.5
@@ -196,12 +199,13 @@ def train(net_factory, prefix, end_epoch, base_dir, display=200, base_lr=0.01):
     tf.summary.scalar("cls_accuracy", accuracy_op)  # cls_acc
     tf.summary.scalar("total_loss", total_loss_op)  # cls_loss, bbox loss, landmark loss and L2 loss add together
     summary_op = tf.summary.merge_all()
-    logs_dir = "../logs/%s" % (net)
 
-    if os.path.exists(logs_dir) == False:
-        os.mkdir(logs_dir)
+    logs_dir = prefix.joinpath('logs')
 
-    writer = tf.summary.FileWriter(logs_dir, sess.graph)
+    if not logs_dir.exists():
+        logs_dir.mkdir()
+
+    writer = tf.summary.FileWriter(logs_dir.as_posix(), sess.graph)
     projector_config = projector.ProjectorConfig()
     projector.visualize_embeddings(writer, projector_config)
     # begin
@@ -222,7 +226,8 @@ def train(net_factory, prefix, end_epoch, base_dir, display=200, base_lr=0.01):
             image_batch_array, label_batch_array, bbox_batch_array, landmark_batch_array = sess.run(
                 [image_batch, label_batch, bbox_batch, landmark_batch])
             # random flip
-            image_batch_array, landmark_batch_array = random_flip_images(image_batch_array, label_batch_array,
+            image_batch_array, landmark_batch_array = random_flip_images(image_batch_array,
+                                                                         label_batch_array,
                                                                          landmark_batch_array)
             '''
             print('im here')
@@ -261,7 +266,7 @@ def train(net_factory, prefix, end_epoch, base_dir, display=200, base_lr=0.01):
                 print('path prefix is :', path_prefix)
             writer.add_summary(summary, global_step=step)
     except tf.errors.OutOfRangeError:
-        print("完成！！！")
+        pass
     finally:
         coord.request_stop()
         writer.close()

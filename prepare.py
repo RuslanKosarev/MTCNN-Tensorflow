@@ -3,7 +3,8 @@ __author__ = 'Ruslan N. Kosarev'
 
 import os
 import pathlib as plib
-from prepare_data.generate import generate12, GenerateData
+from prepare_data.generate import generate12, GenerateData, gen_imglist
+from prepare_data import tfrecords
 
 
 class WiderData:
@@ -63,3 +64,10 @@ if __name__ == '__main__':
     input2 = LandmarkData()
     output2 = LandmarkOutput()
     GenerateData(input2, output2, 'Pnet', argument=True)
+
+    data_dir = plib.Path(os.path.join(os.pardir, 'data/12')).absolute()
+    gen_imglist(data_dir)
+
+    dir = plib.Path(os.pardir).joinpath('data', '12').absolute()
+    output_directory = dir.joinpath('PNet')
+    tfrecords.generate(dir, output_directory, shuffling=False)
