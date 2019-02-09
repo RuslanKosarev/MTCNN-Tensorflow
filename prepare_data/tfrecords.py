@@ -3,7 +3,7 @@ __author__ = 'Ruslan N. Kosarev'
 
 import os
 import sys
-import random
+import numpy as np
 import tensorflow as tf
 from prepare_data.tfrecord_utils import process_image_without_coder, _convert_to_example_simple
 
@@ -65,13 +65,14 @@ def get_dataset(fname):
     return data
 
 
-def generate(dataset_dir, output_dir, shuffling=False):
+def generate(dataset_dir, output_dir, shuffling=False, seed=None):
     """Runs the conversion operation.
 
     Args:
       dataset_dir: The dataset directory where the dataset is stored.
       output_dir: Output directory.
     """
+    np.random.seed(seed=seed)
 
     if not output_dir.exists():
         output_dir.mkdir()
@@ -86,7 +87,7 @@ def generate(dataset_dir, output_dir, shuffling=False):
     dataset = get_dataset(fname)
 
     if shuffling:
-        random.shuffle(dataset)
+        np.random.shuffle(dataset)
 
     with tf.python_io.TFRecordWriter(str(tfrecord_fname)) as writer:
         for i, data in enumerate(dataset):

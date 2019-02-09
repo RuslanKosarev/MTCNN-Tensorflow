@@ -170,8 +170,9 @@ def generate12(input, output, seed=None):
                     if not cv2.imwrite(save_file.as_posix(), resized):
                         raise IOError('file {} has not been written'.format(save_file))
 
+                    #f1.write("../../DATA/12/positive/%s.jpg" % p_idx + ' 1 %.2f %.2f %.2f %.2f\n' % (offset_x1, offset_y1, offset_x2, offset_y2))
                     text = os.path.join(output.posdir.name, save_file.name) + \
-                        ' 1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(p_idx, offset_x1, offset_y1, offset_x2, offset_y2)
+                        ' 1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(offset_x1, offset_y1, offset_x2, offset_y2)
                     fpos.write(text)
                     p_idx += 1
                 elif iou >= 0.4:
@@ -179,8 +180,9 @@ def generate12(input, output, seed=None):
                     if not cv2.imwrite(save_file.as_posix(), resized):
                         raise IOError('file {} has not been written'.format(save_file))
 
+                    # f3.write("../../DATA/12/part/%s.jpg" % d_idx + ' -1 %.2f %.2f %.2f %.2f\n' % (offset_x1, offset_y1, offset_x2, offset_y2))
                     text = os.path.join(output.partdir.name, save_file.name) + \
-                        ' -1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(d_idx, offset_x1, offset_y1, offset_x2, offset_y2)
+                        ' -1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(offset_x1, offset_y1, offset_x2, offset_y2)
                     fpart.write(text)
                     d_idx += 1
 
@@ -190,15 +192,14 @@ def generate12(input, output, seed=None):
             sys.stdout.write('\r{} images done, pos: {} part: {} neg: {}'.format(idx, p_idx, d_idx, n_idx))
         sys.stdout.flush()
 
-    print('\n')
-    print('{} images done, pos: {} part: {} neg: {}'.format(idx, p_idx, d_idx, n_idx))
+    print('\r{} images done, pos: {} part: {} neg: {}'.format(idx, p_idx, d_idx, n_idx))
 
     fpos.close()
     fneg.close()
     fpart.close()
 
 
-def GenerateData(input, output, net, argument=False):
+def GenerateData(input, output, net, argument=False, seed=None):
     '''
 
     :param input: name/path of the text file that contains image path,
@@ -209,6 +210,7 @@ def GenerateData(input, output, net, argument=False):
     :param argument: apply augmentation or not
     :return:  images and related landmarks
     '''
+    np.random.seed(seed=seed)
 
     size = 12
     image_id = 0
@@ -349,7 +351,8 @@ def GenerateData(input, output, net, argument=False):
     f.close()
 
 
-def gen_imglist(data_dir):
+def gen_imglist(data_dir, seed=None):
+    np.random.seed(seed=seed)
 
     size = 12
     net = 'PNet'
@@ -357,9 +360,9 @@ def gen_imglist(data_dir):
     # with open(data_dir.joinpath('pos_12.txt').as_posix(), 'r') as f:
     #     pos = f.readlines()
 
-    pos = readlines(data_dir.joinpath('pos_12.txt'), strip=False)
-    neg = readlines(data_dir.joinpath('neg_12.txt'), strip=False)
-    part = readlines(data_dir.joinpath('part_12.txt'), strip=False)
+    pos = readlines(data_dir.joinpath('positive.txt'), strip=False)
+    neg = readlines(data_dir.joinpath('negative.txt'), strip=False)
+    part = readlines(data_dir.joinpath('part.txt'), strip=False)
     landmark = readlines(data_dir.joinpath('landmark_12_aug.txt'), strip=False)
 
     filename = data_dir.joinpath('train_landmark.txt')

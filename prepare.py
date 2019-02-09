@@ -56,18 +56,21 @@ class LandmarkOutput:
 
 
 if __name__ == '__main__':
+    # seed to generate random numbers
+    seed = None
+
     input = WiderData()
     output = WiderOutput()
-    generate12(input, output, seed=0)
+#    generate12(input, output, seed=seed)
 
     # the database contains the names of all the landmark training data
     input2 = LandmarkData()
     output2 = LandmarkOutput()
-    GenerateData(input2, output2, 'Pnet', argument=True)
+#    GenerateData(input2, output2, 'Pnet', argument=True, seed=seed)
 
     data_dir = plib.Path(os.path.join(os.pardir, 'data/12')).absolute()
     gen_imglist(data_dir)
 
     dir = plib.Path(os.pardir).joinpath('data', '12').absolute()
     output_directory = dir.joinpath('PNet')
-    tfrecords.generate(dir, output_directory, shuffling=True)
+    tfrecords.generate(dir, output_directory, shuffling=True, seed=seed)

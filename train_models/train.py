@@ -193,11 +193,11 @@ def train(type, net_factory, prefix, end_epoch, base_dir, display=100, base_lr=0
     sess.run(init)
 
     # visualize some variables
-    tf.summary.scalar("cls_loss", cls_loss_op)  # cls_loss
-    tf.summary.scalar("bbox_loss", bbox_loss_op)  # bbox_loss
-    tf.summary.scalar("landmark_loss", landmark_loss_op)  # landmark_loss
-    tf.summary.scalar("cls_accuracy", accuracy_op)  # cls_acc
-    tf.summary.scalar("total_loss", total_loss_op)  # cls_loss, bbox loss, landmark loss and L2 loss add together
+    tf.summary.scalar("cls_loss", cls_loss_op)
+    tf.summary.scalar("bbox_loss", bbox_loss_op)
+    tf.summary.scalar("landmark_loss", landmark_loss_op)
+    tf.summary.scalar("cls_accuracy", accuracy_op)
+    tf.summary.scalar("total_loss", total_loss_op)
     summary_op = tf.summary.merge_all()
 
     logs_dir = prefix.joinpath('logs')
@@ -241,8 +241,10 @@ def train(type, net_factory, prefix, end_epoch, base_dir, display=100, base_lr=0
             '''
 
             _, _, summary = sess.run([train_op, lr_op, summary_op],
-                                     feed_dict={input_image: image_batch_array, label: label_batch_array,
-                                                bbox_target: bbox_batch_array, landmark_target: landmark_batch_array})
+                                     feed_dict={input_image: image_batch_array,
+                                                label: label_batch_array,
+                                                bbox_target: bbox_batch_array,
+                                                landmark_target: landmark_batch_array})
 
             if (step + 1) % display == 0:
                 # acc = accuracy(cls_pred, labels_batch)
@@ -259,10 +261,10 @@ def train(type, net_factory, prefix, end_epoch, base_dir, display=100, base_lr=0
                         total_loss, lr))
 
             # save every two epochs
-            if i * config.BATCH_SIZE > num * 2:
+            if i * config.BATCH_SIZE > 2*num:
                 epoch = epoch + 1
                 i = 0
-                path_prefix = saver.save(sess, prefix, global_step=epoch * 2)
+                path_prefix = saver.save(sess, str(prefix), global_step=2*epoch)
                 print('path prefix is :', path_prefix)
             writer.add_summary(summary, global_step=step)
     except tf.errors.OutOfRangeError:
