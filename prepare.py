@@ -34,9 +34,9 @@ class WiderOutput:
             if not dir.exists():
                 dir.mkdir(parents=True)
 
-        self.postxt = self.posdir.parent.joinpath('pos_12.txt')
-        self.negtxt = self.negdir.parent.joinpath('neg_12.txt')
-        self.parttxt = self.partdir.parent.joinpath('part_12.txt')
+        self.postxt = self.posdir.parent.joinpath('positive.txt')
+        self.negtxt = self.negdir.parent.joinpath('negative.txt')
+        self.parttxt = self.partdir.parent.joinpath('part.txt')
 
 
 class LandmarkData:
@@ -58,7 +58,7 @@ class LandmarkOutput:
 if __name__ == '__main__':
     input = WiderData()
     output = WiderOutput()
-    generate12(input, output)
+    generate12(input, output, seed=0)
 
     # the database contains the names of all the landmark training data
     input2 = LandmarkData()
@@ -70,4 +70,4 @@ if __name__ == '__main__':
 
     dir = plib.Path(os.pardir).joinpath('data', '12').absolute()
     output_directory = dir.joinpath('PNet')
-    tfrecords.generate(dir, output_directory, shuffling=False)
+    tfrecords.generate(dir, output_directory, shuffling=True)

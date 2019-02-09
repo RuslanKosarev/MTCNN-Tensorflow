@@ -5,14 +5,13 @@ import os
 import sys
 import cv2
 import numpy as np
-import random
-import pathlib as lib
 from prepare_data.utils import IoU, readlines
 from prepare_data.BBox_utils import read_bbox_data, BBox
 from prepare_data.Landmark_utils import rotate, flip
 
 
-def generate12(input, output):
+def generate12(input, output, seed=None):
+    np.random.seed(seed=seed)
 
     fpos = open(output.postxt.as_posix(), 'w')
     fneg = open(output.negtxt.as_posix(), 'w')
@@ -191,6 +190,7 @@ def generate12(input, output):
             sys.stdout.write('\r{} images done, pos: {} part: {} neg: {}'.format(idx, p_idx, d_idx, n_idx))
         sys.stdout.flush()
 
+    print('\n')
     print('{} images done, pos: {} part: {} neg: {}'.format(idx, p_idx, d_idx, n_idx))
 
     fpos.close()
@@ -291,14 +291,14 @@ def GenerateData(input, output, net, argument=False):
                     bbox = BBox([nx1, ny1, nx2, ny2])
 
                     # mirror
-                    if random.choice([0, 1]) > 0:
+                    if np.random.choice([0, 1]) > 0:
                         face_flipped, landmark_flipped = flip(resized_im, landmark_)
                         face_flipped = cv2.resize(face_flipped, (size, size))
                         # c*h*w
                         F_imgs.append(face_flipped)
                         F_landmarks.append(landmark_flipped.reshape(10))
                     # rotate
-                    if random.choice([0, 1]) > 0:
+                    if np.random.choice([0, 1]) > 0:
                         face_rotated_by_alpha, landmark_rotated = rotate(img, bbox, bbox.reprojectLandmark(landmark_), 5)
                         # landmark_offset
                         landmark_rotated = bbox.projectLandmark(landmark_rotated)
@@ -313,9 +313,8 @@ def GenerateData(input, output, net, argument=False):
                         F_landmarks.append(landmark_flipped.reshape(10))
 
                         # anti-clockwise rotation
-                    if random.choice([0, 1]) > 0:
-                        face_rotated_by_alpha, landmark_rotated = rotate(img, bbox, \
-                                                                         bbox.reprojectLandmark(landmark_), -5)  # 顺时针旋转
+                    if np.random.choice([0, 1]) > 0:
+                        face_rotated_by_alpha, landmark_rotated = rotate(img, bbox, bbox.reprojectLandmark(landmark_), -5)
                         landmark_rotated = bbox.projectLandmark(landmark_rotated)
                         face_rotated_by_alpha = cv2.resize(face_rotated_by_alpha, (size, size))
                         F_imgs.append(face_rotated_by_alpha)
