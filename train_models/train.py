@@ -97,36 +97,29 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train(type, net_factory, prefix, end_epoch, base_dir, display=100, base_lr=0.01):
+def train(type, net_factory, input, prefix, end_epoch, base_dir, display=100, base_lr=0.01):
     """
     train PNet/RNet/ONet
     :param net_factory:
-    :param prefix: model path
+    :param input: model path
     :param end_epoch:
     :param dataset:
     :param display:
     :param base_lr:
     :return:
     """
-    #net = prefix.split('/')[-1]
-    # label file
     label_file = base_dir.joinpath('train_landmark.txt')
-    #print(label_file)
-    #f = open(label_file, 'r')
-    # get number of training examples
 
     lines = readlines(label_file)
     num = len(lines)
     print("Total size of the dataset is: ", num)
-    print(prefix)
+    print(input)
 
     # PNet use this method to get data
     if type == 'PNet':
-        dataset_dir = prefix.joinpath('train_PNet_landmark.tfrecord')
+        dataset_dir = input.joinpath('train_PNet_landmark.tfrecord')
         print('dataset dir is:', dataset_dir)
-        image_batch, label_batch, bbox_batch, landmark_batch = read_single_tfrecord(dataset_dir,
-                                                                                    config.BATCH_SIZE,
-                                                                                    type)
+        image_batch, label_batch, bbox_batch, landmark_batch = read_single_tfrecord(dataset_dir, config.BATCH_SIZE, type)
 
     # RNet use 3 tfrecords to get data
     else:
@@ -200,12 +193,11 @@ def train(type, net_factory, prefix, end_epoch, base_dir, display=100, base_lr=0
     tf.summary.scalar("total_loss", total_loss_op)
     summary_op = tf.summary.merge_all()
 
-    logs_dir = prefix.joinpath('logs')
+    logdir = prefix.parent.joinpath('logs')
+    if not logdir.exists():
+        logdir.mkdir(parents=True)
 
-    if not logs_dir.exists():
-        logs_dir.mkdir()
-
-    writer = tf.summary.FileWriter(logs_dir.as_posix(), sess.graph)
+    writer = tf.summary.FileWriter(logdir.as_posix(), sess.graph)
     projector_config = projector.ProjectorConfig()
     projector.visualize_embeddings(writer, projector_config)
     # begin
@@ -264,7 +256,7 @@ def train(type, net_factory, prefix, end_epoch, base_dir, display=100, base_lr=0
             if i * config.BATCH_SIZE > 2*num:
                 epoch = epoch + 1
                 i = 0
-                path_prefix = saver.save(sess, str(prefix), global_step=2*epoch)
+                path_prefix = saver.save(sess, str(prefix), global_step=2 * epoch)
                 print('path prefix is :', path_prefix)
             writer.add_summary(summary, global_step=step)
     except tf.errors.OutOfRangeError:
