@@ -11,7 +11,7 @@ from tensorboard.plugins import projector
 from prepare_data.utils import readlines
 from train_models.MTCNN_config import config
 from prepare_data.read_tfrecords import read_multi_tfrecords, read_single_tfrecord
-from train_models.mtcnn_model import P_Net
+from train_models.mtcnn_model import PNet
 
 
 def train_model(base_lr, loss, data_num):
@@ -93,7 +93,7 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train_pnet(input, prefix, end_epoch, base_dir, display=100, base_lr=0.01, seed=None):
+def train_pnet(input, prefix, end_epoch, base_dir, display=100, lr=0.01, seed=None):
     """
     train PNet/RNet/ONet
     :param net_factory:
@@ -101,13 +101,10 @@ def train_pnet(input, prefix, end_epoch, base_dir, display=100, base_lr=0.01, se
     :param end_epoch:
     :param dataset:
     :param display:
-    :param base_lr:
+    :param lr:
     :return:
     """
     np.random.seed(seed=seed)
-    net_factory = P_Net
-    type = 'PNet'
-
     label_file = base_dir.joinpath('train_landmark.txt')
 
     num = len(readlines(label_file))
@@ -118,7 +115,7 @@ def train_pnet(input, prefix, end_epoch, base_dir, display=100, base_lr=0.01, se
     dataset_dir = input.joinpath('train_PNet_landmark.tfrecord')
     print('dataset dir is:', dataset_dir)
 
-    tfdata = read_single_tfrecord(dataset_dir, config.BATCH_SIZE, type)
+    tfdata = read_single_tfrecord(dataset_dir, config.BATCH_SIZE, 'PNet')
 
     # landmark_dir
     image_size = 12
@@ -134,11 +131,11 @@ def train_pnet(input, prefix, end_epoch, base_dir, display=100, base_lr=0.01, se
 
     # get loss and accuracy
     input_image = image_color_distort(input_image)
-    cls_loss_op, bbox_loss_op, landmark_loss_op, l2_loss_op, accuracy_op = net_factory(input_image, label, bbox_target,
-                                                                                       landmark_target, training=True)
+    net = PNet(input_image, label, bbox_target, landmark_target, training=True)
+
     # train,update learning rate(3 loss)
-    total_loss_op = radio_cls_loss * cls_loss_op + radio_bbox_loss * bbox_loss_op + radio_landmark_loss * landmark_loss_op + l2_loss_op
-    train_op, lr_op = train_model(base_lr, total_loss_op, num)
+    total_loss = radio_cls_loss * net.cls_loss + radio_bbox_loss * net.bbox_loss + radio_landmark_loss * net.landmark_loss + net.l2_loss
+    train_op, lr_op = train_model(lr, total_loss, num)
 
     # init
     init = tf.global_variables_initializer()
@@ -149,11 +146,11 @@ def train_pnet(input, prefix, end_epoch, base_dir, display=100, base_lr=0.01, se
     sess.run(init)
 
     # visualize some variables
-    tf.summary.scalar("cls_loss", cls_loss_op)
-    tf.summary.scalar("bbox_loss", bbox_loss_op)
-    tf.summary.scalar("landmark_loss", landmark_loss_op)
-    tf.summary.scalar("cls_accuracy", accuracy_op)
-    tf.summary.scalar("total_loss", total_loss_op)
+    tf.summary.scalar("cls_loss", net.cls_loss)
+    tf.summary.scalar("bbox_loss", net.bbox_loss)
+    tf.summary.scalar("landmark_loss", net.landmark_loss)
+    tf.summary.scalar("cls_accuracy", net.accuracy)
+    tf.summary.scalar("total_loss", total_loss)
     summary_op = tf.summary.merge_all()
 
     logdir = prefix.parent.joinpath('logs')
@@ -204,7 +201,7 @@ def train_pnet(input, prefix, end_epoch, base_dir, display=100, base_lr=0.01, se
             if (step + 1) % display == 0:
                 # acc = accuracy(cls_pred, labels_batch)
                 cls_loss, bbox_loss, landmark_loss, L2_loss, lr, acc = sess.run(
-                    [cls_loss_op, bbox_loss_op, landmark_loss_op, l2_loss_op, lr_op, accuracy_op],
+                    [net.cls_loss, net.bbox_loss, net.landmark_loss, net.l2_loss, lr_op, net.accuracy],
                     feed_dict={input_image: image_batch_array, label: label_batch_array, bbox_target: bbox_batch_array,
                                landmark_target: landmark_batch_array})
 

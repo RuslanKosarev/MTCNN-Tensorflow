@@ -16,5 +16,5 @@ if __name__ == '__main__':
     display = 100
     lr = 0.001
 
-    train.train_pnet(input, prefix, number_of_epochs, base_dir, display=display, base_lr=lr)
+    train.train_pnet(input, prefix, number_of_epochs, base_dir, display=display, lr=lr)
 

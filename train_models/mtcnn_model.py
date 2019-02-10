@@ -2,15 +2,18 @@
 
 import tensorflow as tf
 from tensorflow.contrib import slim
-from tensorflow.contrib.tensorboard.plugins import projector
 import numpy as np
+
 num_keep_radio = 0.7
-#define prelu
+
+
+# define prelu
 def prelu(inputs):
     alphas = tf.get_variable("alphas", shape=inputs.get_shape()[-1], dtype=tf.float32, initializer=tf.constant_initializer(0.25))
     pos = tf.nn.relu(inputs)
     neg = alphas * (inputs-abs(inputs))*0.5
     return pos + neg
+
 
 def dense_to_one_hot(labels_dense,num_classes):
     num_labels = labels_dense.shape[0]
@@ -21,6 +24,7 @@ def dense_to_one_hot(labels_dense,num_classes):
     return labels_one_hot
 #cls_prob:batch*2
 #label:batch
+
 
 def cls_ohem(cls_prob, label):
     zeros = tf.zeros_like(label)
@@ -66,6 +70,8 @@ def bbox_ohem_smooth_L1_loss(bbox_pred,bbox_target,label):
     _, k_index = tf.nn.top_k(smooth_loss, k=keep_num)
     smooth_loss_picked = tf.gather(smooth_loss, k_index)
     return tf.reduce_mean(smooth_loss_picked)
+
+
 def bbox_ohem_orginal(bbox_pred,bbox_target,label):
     zeros_index = tf.zeros_like(label, dtype=tf.float32)
     #pay attention :there is a bug!!!!
@@ -79,6 +85,7 @@ def bbox_ohem_orginal(bbox_pred,bbox_target,label):
     _, k_index = tf.nn.top_k(square_error, k=keep_num)
     square_error = tf.gather(square_error, k_index)
     return tf.reduce_mean(square_error)
+
 
 #label=1 or label=-1 then do regression
 def bbox_ohem(bbox_pred,bbox_target,label):
@@ -110,6 +117,7 @@ def bbox_ohem(bbox_pred,bbox_target,label):
 
     return tf.reduce_mean(square_error)
 
+
 def landmark_ohem(landmark_pred,landmark_target,label):
     '''
 
@@ -131,7 +139,8 @@ def landmark_ohem(landmark_pred,landmark_target,label):
     _, k_index = tf.nn.top_k(square_error, k=keep_num)
     square_error = tf.gather(square_error, k_index)
     return tf.reduce_mean(square_error)
-    
+
+
 def cal_accuracy(cls_prob,label):
     '''
 
@@ -155,7 +164,7 @@ def cal_accuracy(cls_prob,label):
     return accuracy_op
 
 
-def _activation_summary(x):
+def activation_summary(x):
     '''
     creates a summary provides histogram of activations
     creates a summary that measures the sparsity of activations
@@ -170,76 +179,69 @@ def _activation_summary(x):
     #tf.summary.scalar(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
 
+# construct PNet
+class PNet:
+    def __init__(self, inputs, label=None, bbox_target=None, landmark_target=None, training=True):
+        # define common param
+        with slim.arg_scope([slim.conv2d],
+                            activation_fn=prelu,
+                            weights_initializer=slim.xavier_initializer(),
+                            biases_initializer=tf.zeros_initializer(),
+                            weights_regularizer=slim.l2_regularizer(0.0005),
+                            padding='valid'):
+            print(inputs.get_shape())
 
+            net = slim.conv2d(inputs, 10, 3, stride=1,scope='conv1')
+            activation_summary(net)
+            print(net.get_shape())
+            net = slim.max_pool2d(net, kernel_size=[2,2], stride=2, scope='pool1', padding='SAME')
+            activation_summary(net)
+            print(net.get_shape())
+            net = slim.conv2d(net,num_outputs=16,kernel_size=[3,3],stride=1,scope='conv2')
+            activation_summary(net)
+            print(net.get_shape())
 
-
-#construct Pnet
-#label:batch
-def P_Net(inputs,label=None,bbox_target=None,landmark_target=None,training=True):
-    #define common param
-    with slim.arg_scope([slim.conv2d],
-                        activation_fn=prelu,
-                        weights_initializer=slim.xavier_initializer(),
-                        biases_initializer=tf.zeros_initializer(),
-                        weights_regularizer=slim.l2_regularizer(0.0005), 
-                        padding='valid'):
-        print(inputs.get_shape())
-
-
-        net = slim.conv2d(inputs, 10, 3, stride=1,scope='conv1')
-        _activation_summary(net)
-        print(net.get_shape())
-        net = slim.max_pool2d(net, kernel_size=[2,2], stride=2, scope='pool1', padding='SAME')
-        _activation_summary(net)
-        print(net.get_shape())
-        net = slim.conv2d(net,num_outputs=16,kernel_size=[3,3],stride=1,scope='conv2')
-        _activation_summary(net)
-        print(net.get_shape())
-        #
-        net = slim.conv2d(net,num_outputs=32,kernel_size=[3,3],stride=1,scope='conv3')
-        _activation_summary(net)
-        print(net.get_shape())
-        #batch*H*W*2
-        conv4_1 = slim.conv2d(net,num_outputs=2,kernel_size=[1,1],stride=1,scope='conv4_1',activation_fn=tf.nn.softmax)
-        _activation_summary(conv4_1)
-        #conv4_1 = slim.conv2d(net,num_outputs=1,kernel_size=[1,1],stride=1,scope='conv4_1',activation_fn=tf.nn.sigmoid)
+            #
+            net = slim.conv2d(net,num_outputs=32,kernel_size=[3,3],stride=1,scope='conv3')
+            activation_summary(net)
+            print(net.get_shape())
+            #batch*H*W*2
+            conv4_1 = slim.conv2d(net,num_outputs=2,kernel_size=[1,1],stride=1,scope='conv4_1',activation_fn=tf.nn.softmax)
+            activation_summary(conv4_1)
+            #conv4_1 = slim.conv2d(net,num_outputs=1,kernel_size=[1,1],stride=1,scope='conv4_1',activation_fn=tf.nn.sigmoid)
         
-        print (conv4_1.get_shape())
-        #batch*H*W*4
-        bbox_pred = slim.conv2d(net,num_outputs=4,kernel_size=[1,1],stride=1,scope='conv4_2',activation_fn=None)
-        _activation_summary(bbox_pred)
-        print (bbox_pred.get_shape())
-        #batch*H*W*10
-        landmark_pred = slim.conv2d(net,num_outputs=10,kernel_size=[1,1],stride=1,scope='conv4_3',activation_fn=None)
-        _activation_summary(landmark_pred)
-        print (landmark_pred.get_shape())
+            print (conv4_1.get_shape())
+            #batch*H*W*4
+            bbox_pred = slim.conv2d(net,num_outputs=4,kernel_size=[1,1],stride=1,scope='conv4_2',activation_fn=None)
+            activation_summary(bbox_pred)
+            print (bbox_pred.get_shape())
+            #batch*H*W*10
+            landmark_pred = slim.conv2d(net,num_outputs=10,kernel_size=[1,1],stride=1,scope='conv4_3',activation_fn=None)
+            activation_summary(landmark_pred)
+            print(landmark_pred.get_shape())
 
-        #cls_prob_original = conv4_1
-        #bbox_pred_original = bbox_pred
-        if training:
-            #batch*2
-            # calculate classification loss
-            cls_prob = tf.squeeze(conv4_1,[1,2],name='cls_prob')
-            cls_loss = cls_ohem(cls_prob,label)
-            #batch
-            # cal bounding box error, squared sum error
-            bbox_pred = tf.squeeze(bbox_pred,[1,2],name='bbox_pred')
-            bbox_loss = bbox_ohem(bbox_pred,bbox_target,label)
-            #batch*10
-            landmark_pred = tf.squeeze(landmark_pred,[1,2],name="landmark_pred")
-            landmark_loss = landmark_ohem(landmark_pred,landmark_target,label)
+            if training:
+                #batch*2
+                # calculate classification loss
+                cls_prob = tf.squeeze(conv4_1, [1, 2], name='cls_prob')
+                self.cls_loss = cls_ohem(cls_prob, label)
+                #batch
+                # cal bounding box error, squared sum error
+                bbox_pred = tf.squeeze(bbox_pred, [1, 2], name='bbox_pred')
+                self.bbox_loss = bbox_ohem(bbox_pred, bbox_target, label)
+                #batch*10
+                landmark_pred = tf.squeeze(landmark_pred, [1, 2], name="landmark_pred")
+                self.landmark_loss = landmark_ohem(landmark_pred, landmark_target, label)
 
-            accuracy = cal_accuracy(cls_prob,label)
-            L2_loss = tf.add_n(slim.losses.get_regularization_losses())
-            return cls_loss,bbox_loss,landmark_loss,L2_loss,accuracy
-        #test
-        else:
-            #when test,batch_size = 1
-            cls_pro_test = tf.squeeze(conv4_1, axis=0)
-            bbox_pred_test = tf.squeeze(bbox_pred,axis=0)
-            landmark_pred_test = tf.squeeze(landmark_pred,axis=0)
-            return cls_pro_test,bbox_pred_test,landmark_pred_test
-        
+                self.accuracy = cal_accuracy(cls_prob, label)
+                self.l2_loss = tf.add_n(slim.losses.get_regularization_losses())
+            else:
+                # if batch_size = 1
+                self.cls_pro_test = tf.squeeze(conv4_1, axis=0)
+                self.bbox_pred_test = tf.squeeze(bbox_pred, axis=0)
+                self.landmark_pred_test = tf.squeeze(landmark_pred, axis=0)
+
+
 def R_Net(inputs,label=None,bbox_target=None,landmark_target=None,training=True):
     with slim.arg_scope([slim.conv2d],
                         activation_fn = prelu,
