@@ -119,8 +119,7 @@ def train(type, net_factory, input, prefix, end_epoch, base_dir, display=100, ba
     if type == 'PNet':
         dataset_dir = input.joinpath('train_PNet_landmark.tfrecord')
         print('dataset dir is:', dataset_dir)
-        image_batch, label_batch, bbox_batch, landmark_batch = read_single_tfrecord(dataset_dir, config.BATCH_SIZE, type)
-
+        tfdata = read_single_tfrecord(dataset_dir, config.BATCH_SIZE, type)
     # RNet use 3 tfrecords to get data
     else:
         pos_dir = os.path.join(base_dir, 'pos_landmark.tfrecord_shuffle')
@@ -215,8 +214,8 @@ def train(type, net_factory, input, prefix, end_epoch, base_dir, display=100, ba
             i = i + 1
             if coord.should_stop():
                 break
-            image_batch_array, label_batch_array, bbox_batch_array, landmark_batch_array = sess.run(
-                [image_batch, label_batch, bbox_batch, landmark_batch])
+            image_batch_array, label_batch_array, bbox_batch_array, landmark_batch_array = sess.run(tfdata)
+
             # random flip
             image_batch_array, landmark_batch_array = random_flip_images(image_batch_array,
                                                                          label_batch_array,
