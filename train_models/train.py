@@ -93,12 +93,12 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train_pnet(input, prefix, end_epoch, base_dir, display=100, lr=0.01, seed=None):
+def train_pnet(input, prefix, number_of_epochs, base_dir, display=100, lr=0.01, seed=None):
     """
     train PNet/RNet/ONet
     :param net_factory:
     :param input: model path
-    :param end_epoch:
+    :param number_of_epochs:
     :param dataset:
     :param display:
     :param lr:
@@ -146,11 +146,11 @@ def train_pnet(input, prefix, end_epoch, base_dir, display=100, lr=0.01, seed=No
     sess.run(init)
 
     # visualize some variables
-    tf.summary.scalar("cls_loss", net.cls_loss)
-    tf.summary.scalar("bbox_loss", net.bbox_loss)
-    tf.summary.scalar("landmark_loss", net.landmark_loss)
-    tf.summary.scalar("cls_accuracy", net.accuracy)
-    tf.summary.scalar("total_loss", total_loss)
+    tf.summary.scalar('cls_loss', net.cls_loss)
+    tf.summary.scalar('bbox_loss', net.bbox_loss)
+    tf.summary.scalar('landmark_loss', net.landmark_loss)
+    tf.summary.scalar('cls_accuracy', net.accuracy)
+    tf.summary.scalar('total_loss', total_loss)
     summary_op = tf.summary.merge_all()
 
     logdir = prefix.parent.joinpath('logs')
@@ -164,15 +164,14 @@ def train_pnet(input, prefix, end_epoch, base_dir, display=100, lr=0.01, seed=No
     coord = tf.train.Coordinator()
     # begin enqueue thread
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-    i = 0
-    # total steps
-    MAX_STEP = int(num / config.BATCH_SIZE + 1) * end_epoch
-    epoch = 0
+
     sess.graph.finalize()
 
+    # total steps
+    number_of_iterations = int(num / config.BATCH_SIZE + 1) * number_of_epochs
+
     try:
-        for step in range(MAX_STEP):
-            i = i + 1
+        for iter in range(number_of_iterations):
             if coord.should_stop():
                 break
             image_batch_array, label_batch_array, bbox_batch_array, landmark_batch_array = sess.run(tfdata)
@@ -181,44 +180,33 @@ def train_pnet(input, prefix, end_epoch, base_dir, display=100, lr=0.01, seed=No
             image_batch_array, landmark_batch_array = random_flip_images(image_batch_array,
                                                                          label_batch_array,
                                                                          landmark_batch_array)
-            '''
-            print('im here')
-            print(image_batch_array.shape)
-            print(label_batch_array.shape)
-            print(bbox_batch_array.shape)
-            print(landmark_batch_array.shape)
-            print(label_batch_array[0])
-            print(bbox_batch_array[0])
-            print(landmark_batch_array[0])
-            '''
 
-            _, _, summary = sess.run([train_op, lr_op, summary_op],
-                                     feed_dict={input_image: image_batch_array,
-                                                label: label_batch_array,
-                                                bbox_target: bbox_batch_array,
-                                                landmark_target: landmark_batch_array})
+            _, _, summary = sess.run([train_op, lr_op, summary_op], feed_dict={input_image: image_batch_array,
+                                                                               label: label_batch_array,
+                                                                               bbox_target: bbox_batch_array,
+                                                                               landmark_target: landmark_batch_array})
 
-            if (step + 1) % display == 0:
-                # acc = accuracy(cls_pred, labels_batch)
-                cls_loss, bbox_loss, landmark_loss, L2_loss, lr, acc = sess.run(
-                    [net.cls_loss, net.bbox_loss, net.landmark_loss, net.l2_loss, lr_op, net.accuracy],
-                    feed_dict={input_image: image_batch_array, label: label_batch_array, bbox_target: bbox_batch_array,
-                               landmark_target: landmark_batch_array})
+            if (iter + 1) % display == 0:
+                losses = (net.cls_loss, net.bbox_loss, net.landmark_loss, net.l2_loss, net.accuracy, total_loss)
+                names = ('cls loss', 'bbox loss', 'landmark loss', 'l2 loss', 'accuracy', 'total loss')
 
-                total_loss = radio_cls_loss * cls_loss + radio_bbox_loss * bbox_loss + radio_landmark_loss * landmark_loss + L2_loss
-                # landmark loss: %4f,
-                print(
-                    "%s : Step: %d/%d, accuracy: %3f, cls loss: %4f, bbox loss: %4f,Landmark loss :%4f,L2 loss: %4f, Total Loss: %4f ,lr:%f " % (
-                        datetime.now(), step + 1, MAX_STEP, acc, cls_loss, bbox_loss, landmark_loss, L2_loss,
-                        total_loss, lr))
+                values = sess.run(losses, feed_dict={input_image: image_batch_array,
+                                                     label: label_batch_array,
+                                                     bbox_target: bbox_batch_array,
+                                                     landmark_target: landmark_batch_array})
+
+                info = '{}: step: {}/{}'.format(datetime.now(), iter + 1, number_of_iterations)
+                for name, value in zip(names, values):
+                    info += ', {}: {:0.4f}'.format(name, value)
+
+                print(info)
 
             # save every two epochs
-            if i * config.BATCH_SIZE > 2*num:
-                epoch = epoch + 1
-                i = 0
-                path_prefix = saver.save(sess, str(prefix), global_step=2 * epoch)
+            if (iter+1) % (number_of_iterations/number_of_epochs) == 0:
+                epoch = int((iter+1) / (number_of_iterations/number_of_epochs))
+                path_prefix = saver.save(sess, str(prefix), global_step=epoch)
                 print('path prefix is :', path_prefix)
-            writer.add_summary(summary, global_step=step)
+            writer.add_summary(summary, global_step=iter)
     except tf.errors.OutOfRangeError:
         pass
     finally:
