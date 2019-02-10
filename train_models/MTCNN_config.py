@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 
 from easydict import EasyDict as edict
 

@@ -11,6 +11,7 @@ from tensorboard.plugins import projector
 from prepare_data.utils import readlines
 from train_models.MTCNN_config import config
 from prepare_data.read_tfrecords import read_multi_tfrecords, read_single_tfrecord
+from train_models.mtcnn_model import P_Net
 
 
 def train_model(base_lr, loss, data_num):
@@ -92,7 +93,7 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train_pnet(net_factory, input, prefix, end_epoch, base_dir, display=100, base_lr=0.01, seed=None):
+def train_pnet(input, prefix, end_epoch, base_dir, display=100, base_lr=0.01, seed=None):
     """
     train PNet/RNet/ONet
     :param net_factory:
@@ -104,7 +105,9 @@ def train_pnet(net_factory, input, prefix, end_epoch, base_dir, display=100, bas
     :return:
     """
     np.random.seed(seed=seed)
+    net_factory = P_Net
     type = 'PNet'
+
     label_file = base_dir.joinpath('train_landmark.txt')
 
     num = len(readlines(label_file))
@@ -128,12 +131,13 @@ def train_pnet(net_factory, input, prefix, end_epoch, base_dir, display=100, bas
     label = tf.placeholder(tf.float32, shape=[config.BATCH_SIZE], name='label')
     bbox_target = tf.placeholder(tf.float32, shape=[config.BATCH_SIZE, 4], name='bbox_target')
     landmark_target = tf.placeholder(tf.float32, shape=[config.BATCH_SIZE, 10], name='landmark_target')
+
     # get loss and accuracy
     input_image = image_color_distort(input_image)
-    cls_loss_op, bbox_loss_op, landmark_loss_op, L2_loss_op, accuracy_op = net_factory(input_image, label, bbox_target,
+    cls_loss_op, bbox_loss_op, landmark_loss_op, l2_loss_op, accuracy_op = net_factory(input_image, label, bbox_target,
                                                                                        landmark_target, training=True)
     # train,update learning rate(3 loss)
-    total_loss_op = radio_cls_loss * cls_loss_op + radio_bbox_loss * bbox_loss_op + radio_landmark_loss * landmark_loss_op + L2_loss_op
+    total_loss_op = radio_cls_loss * cls_loss_op + radio_bbox_loss * bbox_loss_op + radio_landmark_loss * landmark_loss_op + l2_loss_op
     train_op, lr_op = train_model(base_lr, total_loss_op, num)
 
     # init
@@ -200,7 +204,7 @@ def train_pnet(net_factory, input, prefix, end_epoch, base_dir, display=100, bas
             if (step + 1) % display == 0:
                 # acc = accuracy(cls_pred, labels_batch)
                 cls_loss, bbox_loss, landmark_loss, L2_loss, lr, acc = sess.run(
-                    [cls_loss_op, bbox_loss_op, landmark_loss_op, L2_loss_op, lr_op, accuracy_op],
+                    [cls_loss_op, bbox_loss_op, landmark_loss_op, l2_loss_op, lr_op, accuracy_op],
                     feed_dict={input_image: image_batch_array, label: label_batch_array, bbox_target: bbox_batch_array,
                                landmark_target: landmark_batch_array})
 
