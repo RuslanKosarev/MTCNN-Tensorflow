@@ -157,7 +157,7 @@ def train_pnet(input, prefix, number_of_epochs, base_dir, display=100, lr=0.01, 
     if not logdir.exists():
         logdir.mkdir(parents=True)
 
-    writer = tf.summary.FileWriter(logdir.as_posix(), sess.graph)
+    writer = tf.summary.FileWriter(str(logdir), sess.graph)
     projector_config = projector.ProjectorConfig()
     projector.visualize_embeddings(writer, projector_config)
     # begin
@@ -201,12 +201,13 @@ def train_pnet(input, prefix, number_of_epochs, base_dir, display=100, lr=0.01, 
 
                 print(info)
 
-            # save every two epochs
+            # save every epoch
             if (iter+1) % (number_of_iterations/number_of_epochs) == 0:
                 epoch = int((iter+1) / (number_of_iterations/number_of_epochs))
                 path_prefix = saver.save(sess, str(prefix), global_step=epoch)
-                print('path prefix is :', path_prefix)
-            writer.add_summary(summary, global_step=iter)
+                print('path prefix is:', path_prefix, ' epoch', epoch, '/', number_of_epochs)
+                writer.add_summary(summary, global_step=iter)
+
     except tf.errors.OutOfRangeError:
         pass
     finally:
