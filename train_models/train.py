@@ -187,10 +187,10 @@ def train_pnet(input, prefix, number_of_epochs, base_dir, display=100, lr=0.01, 
                                                                                landmark_target: landmark_batch_array})
 
             if (iter + 1) % display == 0:
-                losses = (net.cls_loss, net.bbox_loss, net.landmark_loss, net.l2_loss, net.accuracy, total_loss)
-                names = ('cls loss', 'bbox loss', 'landmark loss', 'l2 loss', 'accuracy', 'total loss')
+                fetches = (net.cls_loss, net.bbox_loss, net.landmark_loss, net.l2_loss, net.accuracy, total_loss, lr_op)
+                names = ('cls loss', 'bbox loss', 'landmark loss', 'l2 loss', 'accuracy', 'total loss', 'lr')
 
-                values = sess.run(losses, feed_dict={input_image: image_batch_array,
+                values = sess.run(fetches, feed_dict={input_image: image_batch_array,
                                                      label: label_batch_array,
                                                      bbox_target: bbox_batch_array,
                                                      landmark_target: landmark_batch_array})
