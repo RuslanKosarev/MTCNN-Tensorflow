@@ -4,18 +4,13 @@ import sys
 from datetime import datetime
 
 import numpy as np
+import cv2
 import tensorflow as tf
+
 from tensorboard.plugins import projector
 from prepare_data.utils import readlines
-
 from train_models.MTCNN_config import config
-
-sys.path.append("../prepare_data")
-print(sys.path)
 from prepare_data.read_tfrecords import read_multi_tfrecords, read_single_tfrecord
-
-import random
-import cv2
 
 
 def train_model(base_lr, loss, data_num):
@@ -67,7 +62,7 @@ def random_flip_images(image_batch,label_batch,landmark_batch):
 # all mini-batch mirror
 def random_flip_images(image_batch, label_batch, landmark_batch):
     # mirror
-    if random.choice([0, 1]) > 0:
+    if np.random.choice([0, 1]) > 0:
         num_images = image_batch.shape[0]
         fliplandmarkindexes = np.where(label_batch == -2)[0]
         flipposindexes = np.where(label_batch == 1)[0]
@@ -97,7 +92,7 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train(type, net_factory, input, prefix, end_epoch, base_dir, display=100, base_lr=0.01):
+def train_pnet(net_factory, input, prefix, end_epoch, base_dir, display=100, base_lr=0.01, seed=None):
     """
     train PNet/RNet/ONet
     :param net_factory:
@@ -108,60 +103,25 @@ def train(type, net_factory, input, prefix, end_epoch, base_dir, display=100, ba
     :param base_lr:
     :return:
     """
+    np.random.seed(seed=seed)
+    type = 'PNet'
     label_file = base_dir.joinpath('train_landmark.txt')
 
-    lines = readlines(label_file)
-    num = len(lines)
+    num = len(readlines(label_file))
     print("Total size of the dataset is: ", num)
     print(input)
 
     # PNet use this method to get data
-    if type == 'PNet':
-        dataset_dir = input.joinpath('train_PNet_landmark.tfrecord')
-        print('dataset dir is:', dataset_dir)
-        tfdata = read_single_tfrecord(dataset_dir, config.BATCH_SIZE, type)
-    # RNet use 3 tfrecords to get data
-    else:
-        pos_dir = os.path.join(base_dir, 'pos_landmark.tfrecord_shuffle')
-        part_dir = os.path.join(base_dir, 'part_landmark.tfrecord_shuffle')
-        neg_dir = os.path.join(base_dir, 'neg_landmark.tfrecord_shuffle')
-        landmark_dir = os.path.join(base_dir, 'landmark_landmark.tfrecord_shuffle')
-        # landmark_dir = os.path.join('../../DATA/imglists/RNet','landmark_landmark.tfrecord_shuffle')
-        dataset_dirs = (pos_dir, part_dir, neg_dir, landmark_dir)
+    dataset_dir = input.joinpath('train_PNet_landmark.tfrecord')
+    print('dataset dir is:', dataset_dir)
 
-        pos_radio = 1.0 / 6
-        part_radio = 1.0 / 6
-        landmark_radio = 1.0 / 6
-        neg_radio = 3.0 / 6
+    tfdata = read_single_tfrecord(dataset_dir, config.BATCH_SIZE, type)
 
-        pos_batch_size = int(np.ceil(config.BATCH_SIZE * pos_radio))
-        assert pos_batch_size != 0, "Batch Size Error "
-        part_batch_size = int(np.ceil(config.BATCH_SIZE * part_radio))
-        assert part_batch_size != 0, "Batch Size Error "
-        neg_batch_size = int(np.ceil(config.BATCH_SIZE * neg_radio))
-        assert neg_batch_size != 0, "Batch Size Error "
-        landmark_batch_size = int(np.ceil(config.BATCH_SIZE * landmark_radio))
-        assert landmark_batch_size != 0, "Batch Size Error "
-        batch_sizes = [pos_batch_size, part_batch_size, neg_batch_size, landmark_batch_size]
-        # print('batch_size is:', batch_sizes)
-        image_batch, label_batch, bbox_batch, landmark_batch = read_multi_tfrecords(dataset_dirs, batch_sizes, net)
-
-        # landmark_dir
-    if type == 'PNet':
-        image_size = 12
-        radio_cls_loss = 1.0
-        radio_bbox_loss = 0.5
-        radio_landmark_loss = 0.5
-    elif type == 'RNet':
-        image_size = 24
-        radio_cls_loss = 1.0
-        radio_bbox_loss = 0.5
-        radio_landmark_loss = 0.5
-    else:
-        radio_cls_loss = 1.0
-        radio_bbox_loss = 0.5
-        radio_landmark_loss = 1
-        image_size = 48
+    # landmark_dir
+    image_size = 12
+    radio_cls_loss = 1.0
+    radio_bbox_loss = 0.5
+    radio_landmark_loss = 0.5
 
     # define placeholder
     input_image = tf.placeholder(tf.float32, shape=[config.BATCH_SIZE, image_size, image_size, 3], name='input_image')

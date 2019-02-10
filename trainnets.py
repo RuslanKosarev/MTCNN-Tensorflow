@@ -3,7 +3,7 @@ __author__ = 'Ruslan N. Kosarev'
 
 import os
 import pathlib as plib
-from train_models.train import train
+from train_models import train
 from train_models.mtcnn_model import P_Net
 
 
@@ -17,5 +17,5 @@ if __name__ == '__main__':
     display = 100
     lr = 0.001
 
-    train('PNet', P_Net, input, prefix, number_of_epochs, base_dir, display=display, base_lr=lr)
+    train.train_pnet(P_Net, input, prefix, number_of_epochs, base_dir, display=display, base_lr=lr)
 
