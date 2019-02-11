@@ -184,9 +184,9 @@ def widerdbase(dbase, seed=None):
 
     print('\r{} images done, positive: {}, negative: {}, part: {}'.format(idx, p_idx, n_idx, d_idx))
 
-    h5utils.write_compound(dbase.h5out, 'positive', np.array(positive, dtype=MTCNN_config.wider_dtype))
-    h5utils.write_compound(dbase.h5out, 'negative', np.array(negative, dtype=MTCNN_config.wider_dtype))
-    h5utils.write_compound(dbase.h5out, 'part', np.array(part, dtype=MTCNN_config.wider_dtype))
+    h5utils.write(dbase.h5out, 'positive', np.array(positive, dtype=MTCNN_config.wider_dtype))
+    h5utils.write(dbase.h5out, 'negative', np.array(negative, dtype=MTCNN_config.wider_dtype))
+    h5utils.write(dbase.h5out, 'part', np.array(part, dtype=MTCNN_config.wider_dtype))
 
 
 def lfwdbase(dbase, argument=True, seed=None):
@@ -325,44 +325,19 @@ def lfwdbase(dbase, argument=True, seed=None):
 
                 image_id += 1
 
-    h5utils.write_compound(dbase.h5out, 'landmark', np.array(output, dtype=MTCNN_config.lfw_dtype))
+    h5utils.write(dbase.h5out, 'landmark', np.array(output, dtype=MTCNN_config.lfw_dtype))
 
 
-def mergedbase(data_dir, seed=None):
-    np.random.seed(seed=seed)
+def merge(h5out, wider, lfw):
 
-    dtype = MTCNN_config.wider_dtype
+    keys = ('positive', 'negative', 'part')
+    for key in keys:
+        data = h5utils.read(wider.h5out, key)
+        h5utils.write(h5out, key, data)
+        print(key, len(data))
 
-    size = 12
-    net = 'PNet'
-
-    # with open(data_dir.joinpath('pos_12.txt').as_posix(), 'r') as f:
-    #     pos = f.readlines()
-
-    pos = readlines(data_dir.joinpath('positive.txt'), strip=False)
-    neg = readlines(data_dir.joinpath('negative.txt'), strip=False)
-    part = readlines(data_dir.joinpath('part.txt'), strip=False)
-    landmark = readlines(data_dir.joinpath('landmark_12_aug.txt'), strip=False)
-
-    filename = data_dir.joinpath('train_landmark.txt')
-    if not filename.parent.exists():
-        filename.parent.mkdir(parents=True)
-
-    with filename.open('w') as f:
-        nums = [len(neg), len(pos), len(part)]
-        ratio = [3, 1, 1]
-
-        # base_num = min(nums)
-        base_num = 250000
-        print(len(neg), len(pos), len(part), base_num)
-
-        def write_output(fout, samples, size):
-            for sample in np.random.choice(samples, size=size, replace=True):
-                fout.write(sample)
-
-        write_output(f, neg, min([3*base_num, len(neg)]))
-        write_output(f, pos, base_num)
-        write_output(f, part, base_num)
-
-        for item in landmark:
-            f.write(item)
+    keys = ('landmark',)
+    for key in keys:
+        data = h5utils.read(lfw.h5out, key)
+        h5utils.write(h5out, key, data)
+        print(key, len(data))

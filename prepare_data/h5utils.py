@@ -25,7 +25,7 @@ def write_image(hf, name, image, mode='a', check_name=True):
             hf[name][...] = image
 
 
-def write_compound(filename, name, data, mode='a'):
+def write(filename, name, data, mode='a'):
     with h5py.File(str(filename), mode=mode) as hf:
         if name in hf:
             del hf[name]
@@ -36,3 +36,8 @@ def write_compound(filename, name, data, mode='a'):
                           maxshape=(None,),
                           compression='gzip',
                           dtype=data.dtype)
+
+
+def read(filename, name):
+    with h5py.File(str(filename), mode='r') as hf:
+        return hf[name][...]
