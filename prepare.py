@@ -3,7 +3,7 @@ __author__ = 'Ruslan N. Kosarev'
 
 import os
 import pathlib as plib
-from prepare_data.generate import generate12, GenerateData, gen_imglist
+from prepare_data.generate import wider, GenerateData, mergedbase
 from prepare_data import tfrecords
 
 
@@ -38,6 +38,8 @@ class WiderOutput:
         self.negtxt = self.negdir.parent.joinpath('negative.txt')
         self.parttxt = self.partdir.parent.joinpath('part.txt')
 
+        self.h5outfile = self.outdir.joinpath('wider.h5')
+
 
 class LandmarkData:
     def __init__(self, dir=None):
@@ -61,7 +63,11 @@ if __name__ == '__main__':
 
     input = WiderData()
     output = WiderOutput()
-#    generate12(input, output, seed=seed)
+    from datetime import datetime
+    start = datetime.now()
+    wider(input, output, seed=seed)
+    print(datetime.now() - start)
+    exit(0)
 
     # the database contains the names of all the landmark training data
     input2 = LandmarkData()
@@ -69,7 +75,8 @@ if __name__ == '__main__':
 #    GenerateData(input2, output2, 'Pnet', argument=True, seed=seed)
 
     data_dir = plib.Path(os.path.join(os.pardir, 'data/12')).absolute()
-    gen_imglist(data_dir)
+    mergedbase(data_dir)
+    exit(0)
 
     dir = plib.Path(os.pardir).joinpath('data', '12').absolute()
     output_directory = dir.joinpath('PNet')

@@ -8,14 +8,28 @@ import numpy as np
 from prepare_data.utils import IoU, readlines
 from prepare_data.BBox_utils import read_bbox_data, BBox
 from prepare_data.Landmark_utils import rotate, flip
+from train_models import MTCNN_config
+from prepare_data import h5utils
 
 
-def generate12(input, output, seed=None):
+# def append(dataset, sample):
+#     sample = np.array((os.path.join(sample[0].parent.name, sample[0].name),
+#                        sample[1], sample[2], sample[3], sample[4], sample[5]),
+#                       dtype=MTCNN_config.pnet_dtype)
+#     return np.append(dataset, sample)
+#     return dataset
+
+
+def wider(input, output, seed=None):
     np.random.seed(seed=seed)
 
     fpos = open(output.postxt.as_posix(), 'w')
     fneg = open(output.negtxt.as_posix(), 'w')
     fpart = open(output.parttxt.as_posix(), 'w')
+
+    positive = []
+    negative = []
+    part = []
 
     with input.annotation.open() as f:
         annotations = [a.strip() for a in f]
@@ -26,7 +40,6 @@ def generate12(input, output, seed=None):
     n_idx = 0  # negative
     d_idx = 0  # don't care
     idx = 0
-    box_idx = 0
 
     for annotation in annotations:
         annotation = annotation.split(' ')
@@ -69,11 +82,14 @@ def generate12(input, output, seed=None):
                 resized = cv2.resize(cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
 
                 # Iou with all gts must below 0.3
-                save_file = output.negdir.joinpath('{}.jpg'.format(n_idx))
-                if not cv2.imwrite(save_file.as_posix(), resized):
-                    raise IOError('file {} has not been written'.format(save_file))
+                filename = output.negdir.joinpath('{}.jpg'.format(n_idx))
+                if not cv2.imwrite(str(filename), resized):
+                    raise IOError('file {} has not been written'.format(filename))
 
-                text = os.path.join(output.negdir.name, save_file.name) + ' 0\n'
+                negative.append((os.path.join(filename.parent.name, filename.name), 0,
+                                 np.NaN, np.NaN, np.NaN, np.NaN))
+
+                text = os.path.join(output.negdir.name, filename.name) + ' 0\n'
                 fneg.write(text)
                 n_idx += 1
                 neg_num += 1
@@ -117,11 +133,14 @@ def generate12(input, output, seed=None):
                     resized = cv2.resize(cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
 
                     # Iou with all gts must below 0.3
-                    save_file = output.negdir.joinpath('{}.jpg'.format(n_idx))
-                    if not cv2.imwrite(save_file.as_posix(), resized):
-                        raise IOError('file {} has not been written'.format(save_file))
+                    filename = output.negdir.joinpath('{}.jpg'.format(n_idx))
+                    if not cv2.imwrite(str(filename), resized):
+                        raise IOError('file {} has not been written'.format(filename))
 
-                    text = os.path.join(output.negdir.name, save_file.name) + ' 0\n'
+                    negative.append((os.path.join(filename.parent.name, filename.name), 0,
+                                     np.NaN, np.NaN, np.NaN, np.NaN))
+
+                    text = os.path.join(output.negdir.name, filename.name) + ' 0\n'
                     fneg.write(text)
 
                     n_idx += 1
@@ -166,33 +185,43 @@ def generate12(input, output, seed=None):
                 box_ = box.reshape(1, -1)
                 iou = IoU(crop_box, box_)
                 if iou >= 0.65:
-                    save_file = output.posdir.joinpath('{}.jpg'.format(p_idx))
-                    if not cv2.imwrite(save_file.as_posix(), resized):
-                        raise IOError('file {} has not been written'.format(save_file))
+                    filename = output.posdir.joinpath('{}.jpg'.format(p_idx))
+                    if not cv2.imwrite(str(filename), resized):
+                        raise IOError('file {} has not been written'.format(filename))
 
-                    #f1.write("../../DATA/12/positive/%s.jpg" % p_idx + ' 1 %.2f %.2f %.2f %.2f\n' % (offset_x1, offset_y1, offset_x2, offset_y2))
-                    text = os.path.join(output.posdir.name, save_file.name) + \
+                    positive.append((os.path.join(filename.parent.name, filename.name), 1,
+                                     offset_x1, offset_y1, offset_x2, offset_y2))
+
+                    text = os.path.join(output.posdir.name, filename.name) + \
                         ' 1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(offset_x1, offset_y1, offset_x2, offset_y2)
                     fpos.write(text)
                     p_idx += 1
-                elif iou >= 0.4:
-                    save_file = output.partdir.joinpath('{}.jpg'.format(d_idx))
-                    if not cv2.imwrite(save_file.as_posix(), resized):
-                        raise IOError('file {} has not been written'.format(save_file))
 
-                    # f3.write("../../DATA/12/part/%s.jpg" % d_idx + ' -1 %.2f %.2f %.2f %.2f\n' % (offset_x1, offset_y1, offset_x2, offset_y2))
-                    text = os.path.join(output.partdir.name, save_file.name) + \
+                elif iou >= 0.4:
+                    filename = output.partdir.joinpath('{}.jpg'.format(d_idx))
+                    if not cv2.imwrite(str(filename), resized):
+                        raise IOError('file {} has not been written'.format(filename))
+
+                    part.append((os.path.join(filename.parent.name, filename.name), -1,
+                                 offset_x1, offset_y1, offset_x2, offset_y2))
+
+                    text = os.path.join(output.partdir.name, filename.name) + \
                         ' -1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(offset_x1, offset_y1, offset_x2, offset_y2)
                     fpart.write(text)
+
                     d_idx += 1
 
-            box_idx += 1
-
         if idx % 100 == 0:
-            sys.stdout.write('\r{} images done, pos: {} part: {} neg: {}'.format(idx, p_idx, d_idx, n_idx))
-        sys.stdout.flush()
+            print('\r', '{} images done, positive: {} negative: {} part: {}'.format(idx, p_idx, n_idx, d_idx), end='')
 
-    print('\r{} images done, pos: {} part: {} neg: {}'.format(idx, p_idx, d_idx, n_idx))
+        if idx > 100:
+            break
+
+    print('{} images done, positive: {}, negative: {}, part: {}'.format(idx, p_idx, n_idx, d_idx))
+
+    h5utils.write_compound(output.h5outfile, 'positive', h5utils.create_compound(positive, dtype=MTCNN_config.pnet_dtype))
+    h5utils.write_compound(output.h5outfile, 'negative', h5utils.create_compound(negative, dtype=MTCNN_config.pnet_dtype))
+    h5utils.write_compound(output.h5outfile, 'part', h5utils.create_compound(part, dtype=MTCNN_config.pnet_dtype))
 
     fpos.close()
     fneg.close()
@@ -218,7 +247,7 @@ def GenerateData(input, output, net, argument=False, seed=None):
     data = read_bbox_data(input.annotations)
 
     idx = 0
-    f = open(output.annotations.as_posix(), 'w')
+    f = open(str(output.annotations), 'w')
 
     # image_path bbox landmark(5*2)
     for (imgPath, bbox, landmarkGt) in data:
@@ -226,7 +255,7 @@ def GenerateData(input, output, net, argument=False, seed=None):
         F_imgs = []
         F_landmarks = []
         # print(imgPath)
-        img = cv2.imread(imgPath.as_posix())
+        img = cv2.imread(str(imgPath))
 
         if img is None:
             raise IOError('image {} is None'.format(imgPath))
@@ -337,7 +366,7 @@ def GenerateData(input, output, net, argument=False, seed=None):
                     continue
 
                 outfile = output.files.joinpath('{}.jpg'.format(image_id))
-                cv2.imwrite(outfile.as_posix(), F_imgs[i])
+                cv2.imwrite(str(outfile), F_imgs[i])
 
                 text = os.path.join(output.files.name, '{}.jpg'.format(image_id)) + ' -2'
                 for l in F_landmarks[i]:
@@ -351,8 +380,10 @@ def GenerateData(input, output, net, argument=False, seed=None):
     f.close()
 
 
-def gen_imglist(data_dir, seed=None):
+def mergedbase(data_dir, seed=None):
     np.random.seed(seed=seed)
+
+    dtype = MTCNN_config.pnet_dtype
 
     size = 12
     net = 'PNet'
