@@ -9,13 +9,6 @@ import pathlib as plib
 import os
 
 
-def create_compound(input, dtype):
-    output = np.zeros((len(input),), dtype=dtype)
-    for i, sample in enumerate(input):
-        output[i] = sample
-    return output
-
-
 def write_image(hf, name, image, mode='a', check_name=True):
     with h5py.File(str(hf), mode) as hf:
 
@@ -37,4 +30,9 @@ def write_compound(filename, name, data, mode='a'):
         if name in hf:
             del hf[name]
 
-        hf.create_dataset(name, data=data, shape=data.shape, maxshape=(None,), dtype=data.dtype)
+        hf.create_dataset(name,
+                          data=data,
+                          shape=data.shape,
+                          maxshape=(None,),
+                          compression='gzip',
+                          dtype=data.dtype)

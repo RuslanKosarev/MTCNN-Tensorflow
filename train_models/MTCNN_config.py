@@ -5,7 +5,7 @@ import h5py
 from easydict import EasyDict as edict
 
 pnet_dtype = np.dtype([('path', h5py.special_dtype(vlen=str)),
-                       ('flag', np.int32),
+                       ('flag', np.int8),
                        ('1', np.float),
                        ('2', np.float),
                        ('3', np.float),

@@ -2,7 +2,6 @@
 __author__ = 'Ruslan N. Kosarev'
 
 import os
-import sys
 import cv2
 import numpy as np
 from prepare_data.utils import IoU, readlines
@@ -12,22 +11,18 @@ from train_models import MTCNN_config
 from prepare_data import h5utils
 
 
-def wider(input, output, seed=None):
+def widerdbase(dbase, seed=None):
     np.random.seed(seed=seed)
-
-    fpos = open(output.postxt.as_posix(), 'w')
-    fneg = open(output.negtxt.as_posix(), 'w')
-    fpart = open(output.parttxt.as_posix(), 'w')
 
     positive = []
     negative = []
     part = []
 
-    with input.annotation.open() as f:
+    with dbase.annotation.open() as f:
         annotations = [a.strip() for a in f]
     num = len(annotations)
 
-    print('number of pictures {}'.format(num))
+    print('number of images {}'.format(num))
     p_idx = 0  # positive
     n_idx = 0  # negative
     d_idx = 0  # don't care
@@ -46,15 +41,13 @@ def wider(input, output, seed=None):
         boxes = np.array(bbox, dtype=np.float32).reshape(-1, 4)
 
         # load image
-        img = cv2.imread(input.images.joinpath(im_path + '.jpg').as_posix())
+        img = cv2.imread(dbase.images.joinpath(im_path + '.jpg').as_posix())
         idx += 1
 
         height, width, channel = img.shape
 
-        neg_num = 0
-
         # keep crop random parts, until have 50 negative examples get 50 negative sample from every image
-        while neg_num < 50:
+        for i in range(50):
             # neg_num's size [40,min(width, height) / 2],min_size:40
             # size is a random number between 12 and min(width,height)
             size = np.random.randint(12, min(width, height) / 2)
@@ -74,17 +67,13 @@ def wider(input, output, seed=None):
                 resized = cv2.resize(cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
 
                 # Iou with all gts must below 0.3
-                filename = output.negdir.joinpath('{}.jpg'.format(n_idx))
+                filename = dbase.negative.joinpath('{}.jpg'.format(n_idx))
                 if not cv2.imwrite(str(filename), resized):
                     raise IOError('file {} has not been written'.format(filename))
 
                 negative.append((os.path.join(filename.parent.name, filename.name), 0,
                                  np.NaN, np.NaN, np.NaN, np.NaN))
-
-                text = os.path.join(output.negdir.name, filename.name) + ' 0\n'
-                fneg.write(text)
                 n_idx += 1
-                neg_num += 1
 
         # for every bounding boxes
         for box in boxes:
@@ -125,20 +114,15 @@ def wider(input, output, seed=None):
                     resized = cv2.resize(cropped_im, (12, 12), interpolation=cv2.INTER_LINEAR)
 
                     # Iou with all gts must below 0.3
-                    filename = output.negdir.joinpath('{}.jpg'.format(n_idx))
+                    filename = dbase.negative.joinpath('{}.jpg'.format(n_idx))
                     if not cv2.imwrite(str(filename), resized):
                         raise IOError('file {} has not been written'.format(filename))
 
                     negative.append((os.path.join(filename.parent.name, filename.name), 0,
                                      np.NaN, np.NaN, np.NaN, np.NaN))
-
-                    text = os.path.join(output.negdir.name, filename.name) + ' 0\n'
-                    fneg.write(text)
-
                     n_idx += 1
 
             # generate positive examples and part faces
-
             for i in range(20):
                 # pos and part face size [minsize*0.8,maxsize*1.25]
                 size = np.random.randint(int(min(w, h) * 0.8), np.ceil(1.25 * max(w, h)))
@@ -168,6 +152,7 @@ def wider(input, output, seed=None):
                 offset_y1 = (y1 - ny1) / float(size)
                 offset_x2 = (x2 - nx2) / float(size)
                 offset_y2 = (y2 - ny2) / float(size)
+
                 # crop
                 cropped_im = img[ny1: ny2, nx1: nx2, :]
 
@@ -177,47 +162,34 @@ def wider(input, output, seed=None):
                 box_ = box.reshape(1, -1)
                 iou = IoU(crop_box, box_)
                 if iou >= 0.65:
-                    filename = output.posdir.joinpath('{}.jpg'.format(p_idx))
+                    filename = dbase.positive.joinpath('{}.jpg'.format(p_idx))
                     if not cv2.imwrite(str(filename), resized):
                         raise IOError('file {} has not been written'.format(filename))
 
                     positive.append((os.path.join(filename.parent.name, filename.name), 1,
                                      offset_x1, offset_y1, offset_x2, offset_y2))
-
-                    text = os.path.join(output.posdir.name, filename.name) + \
-                        ' 1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(offset_x1, offset_y1, offset_x2, offset_y2)
-                    fpos.write(text)
                     p_idx += 1
 
                 elif iou >= 0.4:
-                    filename = output.partdir.joinpath('{}.jpg'.format(d_idx))
+                    filename = dbase.part.joinpath('{}.jpg'.format(d_idx))
                     if not cv2.imwrite(str(filename), resized):
                         raise IOError('file {} has not been written'.format(filename))
 
                     part.append((os.path.join(filename.parent.name, filename.name), -1,
                                  offset_x1, offset_y1, offset_x2, offset_y2))
-
-                    text = os.path.join(output.partdir.name, filename.name) + \
-                        ' -1 {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(offset_x1, offset_y1, offset_x2, offset_y2)
-                    fpart.write(text)
-
                     d_idx += 1
 
         if idx % 100 == 0:
-            print('\r{} images done, positive: {} negative: {} part: {}'.format(idx, p_idx, n_idx, d_idx), end='')
+            print('\r{} images done, positive: {}, negative: {}, part: {}'.format(idx, p_idx, n_idx, d_idx), end='')
 
-    print('{} images done, positive: {}, negative: {}, part: {}'.format(idx, p_idx, n_idx, d_idx))
+    print('\r{} images done, positive: {}, negative: {}, part: {}'.format(idx, p_idx, n_idx, d_idx))
 
-    h5utils.write_compound(output.h5outfile, 'positive', h5utils.create_compound(positive, dtype=MTCNN_config.pnet_dtype))
-    h5utils.write_compound(output.h5outfile, 'negative', h5utils.create_compound(negative, dtype=MTCNN_config.pnet_dtype))
-    h5utils.write_compound(output.h5outfile, 'part', h5utils.create_compound(part, dtype=MTCNN_config.pnet_dtype))
-
-    fpos.close()
-    fneg.close()
-    fpart.close()
+    h5utils.write_compound(dbase.h5out, 'positive', np.array(positive, dtype=MTCNN_config.pnet_dtype))
+    h5utils.write_compound(dbase.h5out, 'negative', np.array(negative, dtype=MTCNN_config.pnet_dtype))
+    h5utils.write_compound(dbase.h5out, 'part', np.array(part, dtype=MTCNN_config.pnet_dtype))
 
 
-def GenerateData(input, output, net, argument=False, seed=None):
+def lfwdbase(input, output, net, argument=False, seed=None):
     '''
 
     :param input: name/path of the text file that contains image path,
