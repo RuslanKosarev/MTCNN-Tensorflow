@@ -12,14 +12,6 @@ from train_models import MTCNN_config
 from prepare_data import h5utils
 
 
-# def append(dataset, sample):
-#     sample = np.array((os.path.join(sample[0].parent.name, sample[0].name),
-#                        sample[1], sample[2], sample[3], sample[4], sample[5]),
-#                       dtype=MTCNN_config.pnet_dtype)
-#     return np.append(dataset, sample)
-#     return dataset
-
-
 def wider(input, output, seed=None):
     np.random.seed(seed=seed)
 
@@ -212,10 +204,7 @@ def wider(input, output, seed=None):
                     d_idx += 1
 
         if idx % 100 == 0:
-            print('\r', '{} images done, positive: {} negative: {} part: {}'.format(idx, p_idx, n_idx, d_idx), end='')
-
-        if idx > 100:
-            break
+            print('\r{} images done, positive: {} negative: {} part: {}'.format(idx, p_idx, n_idx, d_idx), end='')
 
     print('{} images done, positive: {}, negative: {}, part: {}'.format(idx, p_idx, n_idx, d_idx))
 
