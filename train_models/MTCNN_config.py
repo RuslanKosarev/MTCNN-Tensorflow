@@ -4,12 +4,25 @@ import numpy as np
 import h5py
 from easydict import EasyDict as edict
 
-pnet_dtype = np.dtype([('path', h5py.special_dtype(vlen=str)),
-                       ('flag', np.int8),
-                       ('1', np.float),
-                       ('2', np.float),
-                       ('3', np.float),
-                       ('4', np.float)])
+wider_dtype = np.dtype([('path', h5py.special_dtype(vlen=str)),
+                        ('flag', np.int8),
+                        ('1', np.float),
+                        ('2', np.float),
+                        ('3', np.float),
+                        ('4', np.float)])
+
+lfw_dtype = np.dtype([('path', h5py.special_dtype(vlen=str)),
+                      ('flag', np.int8),
+                      ('1', np.float),
+                      ('2', np.float),
+                      ('3', np.float),
+                      ('4', np.float),
+                      ('5', np.float),
+                      ('6', np.float),
+                      ('7', np.float),
+                      ('8', np.float),
+                      ('9', np.float),
+                      ('10', np.float)])
 
 config = edict()
 config.BATCH_SIZE = 384

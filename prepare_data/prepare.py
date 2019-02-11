@@ -184,42 +184,31 @@ def widerdbase(dbase, seed=None):
 
     print('\r{} images done, positive: {}, negative: {}, part: {}'.format(idx, p_idx, n_idx, d_idx))
 
-    h5utils.write_compound(dbase.h5out, 'positive', np.array(positive, dtype=MTCNN_config.pnet_dtype))
-    h5utils.write_compound(dbase.h5out, 'negative', np.array(negative, dtype=MTCNN_config.pnet_dtype))
-    h5utils.write_compound(dbase.h5out, 'part', np.array(part, dtype=MTCNN_config.pnet_dtype))
+    h5utils.write_compound(dbase.h5out, 'positive', np.array(positive, dtype=MTCNN_config.wider_dtype))
+    h5utils.write_compound(dbase.h5out, 'negative', np.array(negative, dtype=MTCNN_config.wider_dtype))
+    h5utils.write_compound(dbase.h5out, 'part', np.array(part, dtype=MTCNN_config.wider_dtype))
 
 
-def lfwdbase(input, output, net, argument=False, seed=None):
-    '''
-
-    :param input: name/path of the text file that contains image path,
-                bounding box, and landmarks
-
-    :param output: path of the output dir
-    :param net: one of the net in the cascaded networks
-    :param argument: apply augmentation or not
-    :return:  images and related landmarks
-    '''
+def lfwdbase(dbase, argument=True, seed=None):
     np.random.seed(seed=seed)
 
     size = 12
     image_id = 0
 
-    data = read_bbox_data(input.annotations)
+    data = read_bbox_data(dbase.annotations)
 
     idx = 0
-    f = open(str(output.annotations), 'w')
+    output = []
 
     # image_path bbox landmark(5*2)
     for (imgPath, bbox, landmarkGt) in data:
         # print imgPath
-        F_imgs = []
-        F_landmarks = []
+        f_imgs = []
+        f_landmarks = []
         # print(imgPath)
         img = cv2.imread(str(imgPath))
-
         if img is None:
-            raise IOError('image {} is None'.format(imgPath))
+            raise IOError('error to read image {}.'.format(imgPath))
 
         img_h, img_w, img_c = img.shape
         gt_box = np.array([bbox.left, bbox.top, bbox.right, bbox.bottom])
@@ -239,13 +228,15 @@ def lfwdbase(input, output, net, argument=False, seed=None):
             # put the normalized value into the new list landmark
             landmark[index] = rv
 
-        F_imgs.append(f_face)
-        F_landmarks.append(landmark.reshape(10))
+        f_imgs.append(f_face)
+        f_landmarks.append(landmark.reshape(10))
         landmark = np.zeros((5, 2))
+
         if argument:
             idx = idx + 1
             if idx % 100 == 0:
-                print(idx, "images done")
+                print('\r{} images done.'.format(idx), end='')
+
             x1, y1, x2, y2 = gt_box
             # gt's width
             gt_w = x2 - x1 + 1
@@ -272,14 +263,14 @@ def lfwdbase(input, output, net, argument=False, seed=None):
                 # cal iou
                 iou = IoU(crop_box, np.expand_dims(gt_box, 0))
                 if iou > 0.65:
-                    F_imgs.append(resized_im)
+                    f_imgs.append(resized_im)
                     # normalize
                     for index, one in enumerate(landmarkGt):
                         rv = ((one[0] - nx1) / bbox_size, (one[1] - ny1) / bbox_size)
                         landmark[index] = rv
-                    F_landmarks.append(landmark.reshape(10))
+                    f_landmarks.append(landmark.reshape(10))
                     landmark = np.zeros((5, 2))
-                    landmark_ = F_landmarks[-1].reshape(-1, 2)
+                    landmark_ = f_landmarks[-1].reshape(-1, 2)
                     bbox = BBox([nx1, ny1, nx2, ny2])
 
                     # mirror
@@ -287,64 +278,60 @@ def lfwdbase(input, output, net, argument=False, seed=None):
                         face_flipped, landmark_flipped = flip(resized_im, landmark_)
                         face_flipped = cv2.resize(face_flipped, (size, size))
                         # c*h*w
-                        F_imgs.append(face_flipped)
-                        F_landmarks.append(landmark_flipped.reshape(10))
+                        f_imgs.append(face_flipped)
+                        f_landmarks.append(landmark_flipped.reshape(10))
                     # rotate
                     if np.random.choice([0, 1]) > 0:
                         face_rotated_by_alpha, landmark_rotated = rotate(img, bbox, bbox.reprojectLandmark(landmark_), 5)
                         # landmark_offset
                         landmark_rotated = bbox.projectLandmark(landmark_rotated)
                         face_rotated_by_alpha = cv2.resize(face_rotated_by_alpha, (size, size))
-                        F_imgs.append(face_rotated_by_alpha)
-                        F_landmarks.append(landmark_rotated.reshape(10))
+                        f_imgs.append(face_rotated_by_alpha)
+                        f_landmarks.append(landmark_rotated.reshape(10))
 
                         # flip
                         face_flipped, landmark_flipped = flip(face_rotated_by_alpha, landmark_rotated)
                         face_flipped = cv2.resize(face_flipped, (size, size))
-                        F_imgs.append(face_flipped)
-                        F_landmarks.append(landmark_flipped.reshape(10))
+                        f_imgs.append(face_flipped)
+                        f_landmarks.append(landmark_flipped.reshape(10))
 
                         # anti-clockwise rotation
                     if np.random.choice([0, 1]) > 0:
                         face_rotated_by_alpha, landmark_rotated = rotate(img, bbox, bbox.reprojectLandmark(landmark_), -5)
                         landmark_rotated = bbox.projectLandmark(landmark_rotated)
                         face_rotated_by_alpha = cv2.resize(face_rotated_by_alpha, (size, size))
-                        F_imgs.append(face_rotated_by_alpha)
-                        F_landmarks.append(landmark_rotated.reshape(10))
+                        f_imgs.append(face_rotated_by_alpha)
+                        f_landmarks.append(landmark_rotated.reshape(10))
 
                         face_flipped, landmark_flipped = flip(face_rotated_by_alpha, landmark_rotated)
                         face_flipped = cv2.resize(face_flipped, (size, size))
-                        F_imgs.append(face_flipped)
-                        F_landmarks.append(landmark_flipped.reshape(10))
+                        f_imgs.append(face_flipped)
+                        f_landmarks.append(landmark_flipped.reshape(10))
 
-            F_imgs, F_landmarks = np.asarray(F_imgs), np.asarray(F_landmarks)
+            f_imgs, f_landmarks = np.asarray(f_imgs), np.asarray(f_landmarks)
 
-            for i in range(len(F_imgs)):
-                if np.sum(np.where(F_landmarks[i] <= 0, 1, 0)) > 0:
+            for i in range(len(f_imgs)):
+                if np.sum(np.where(f_landmarks[i] <= 0, 1, 0)) > 0:
                     continue
 
-                if np.sum(np.where(F_landmarks[i] >= 1, 1, 0)) > 0:
+                if np.sum(np.where(f_landmarks[i] >= 1, 1, 0)) > 0:
                     continue
 
-                outfile = output.files.joinpath('{}.jpg'.format(image_id))
-                cv2.imwrite(str(outfile), F_imgs[i])
+                filename = dbase.outdir.joinpath('{}.jpg'.format(image_id))
+                cv2.imwrite(str(filename), f_imgs[i])
 
-                text = os.path.join(output.files.name, '{}.jpg'.format(image_id)) + ' -2'
-                for l in F_landmarks[i]:
-                    text += ' ' + str(l)
-                text += '\n'
-
-                f.write(text)
+                output.append(tuple([os.path.join(filename.parent.name, filename.name), -2] +
+                                    f_landmarks[i].tolist()))
 
                 image_id += 1
 
-    f.close()
+    h5utils.write_compound(dbase.h5out, 'landmark', np.array(output, dtype=MTCNN_config.lfw_dtype))
 
 
 def mergedbase(data_dir, seed=None):
     np.random.seed(seed=seed)
 
-    dtype = MTCNN_config.pnet_dtype
+    dtype = MTCNN_config.wider_dtype
 
     size = 12
     net = 'PNet'
