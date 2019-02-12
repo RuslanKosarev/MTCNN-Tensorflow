@@ -37,6 +37,8 @@ def write(filename, name, data, mode='a'):
                           compression='gzip',
                           dtype=data.dtype)
 
+    print('dataset', len(data), 'has been written to the file', filename.joinpath(name))
+
 
 def read(filename, name):
     with h5py.File(str(filename), mode='r') as hf:
