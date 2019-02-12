@@ -57,7 +57,7 @@ class LFWDBase:
         else:
             self.h5file = self.outdir.joinpath(h5file)
 
-        self.keys = ('landmarks',)
+        self.keys = ('landmark',)
         for key in self.keys:
             if not self.outdir.joinpath(key).exists():
                 self.outdir.joinpath(key).mkdir(parents=True)
@@ -66,23 +66,24 @@ class LFWDBase:
 if __name__ == '__main__':
 
     seed = None
-    outdir = plib.Path(os.pardir).joinpath('data', '12')
+    outdir = plib.Path(os.pardir).joinpath('data', '12').absolute()
     h5file = 'dbtrain.h5'
 
     # prepare wider database
     wider = WiderDBase(outdir=outdir, h5file=h5file)
     start = datetime.now()
-    # prepare.widerdbase(wider, seed=seed)
+    #prepare.widerdbase(wider, seed=seed)
     print(datetime.now() - start)
 
     # prepare lfw database
     lfw = LFWDBase(outdir=outdir, h5file=h5file)
     start = datetime.now()
-    # prepare.lfwdbase(lfw, seed=seed)
+    prepare.lfwdbase(lfw, seed=seed)
     print(datetime.now() - start)
+    exit(0)
 
     start = datetime.now()
     h5file = outdir.joinpath(h5file)
     tfrecord = outdir.joinpath('dbtrain.tfrecord')
-    tfrecords.pnet_tfrecord(h5file=h5file, tfrecord=tfrecord)
+    tfrecords.pnet_tfrecord(tfrecord, h5file, outdir)
     print(datetime.now() - start)
