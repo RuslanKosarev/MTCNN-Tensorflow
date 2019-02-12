@@ -200,14 +200,16 @@ def lfwdbase(dbase, argument=True, seed=None):
     output = []
 
     # image_path bbox landmark(5*2)
-    for (imgPath, bbox, landmarkGt) in data:
+    for (inpfile, bbox, landmarkGt) in data:
         # print imgPath
         f_imgs = []
         f_landmarks = []
         # print(imgPath)
-        img = cv2.imread(str(imgPath))
+
+        inpfile = dbase.inpdir.joinpath(inpfile)
+        img = cv2.imread(str(inpfile))
         if img is None:
-            raise IOError('error to read image {}.'.format(imgPath))
+            raise IOError('error to read image {}.'.format(inpfile))
 
         img_h, img_w, img_c = img.shape
         gt_box = np.array([bbox.left, bbox.top, bbox.right, bbox.bottom])
@@ -316,11 +318,10 @@ def lfwdbase(dbase, argument=True, seed=None):
                 if np.sum(np.where(f_landmarks[i] >= 1, 1, 0)) > 0:
                     continue
 
-                filename = dbase.outdir.joinpath(dbase.keys[0], '{}.jpg'.format(image_id))
-                cv2.imwrite(str(filename), f_imgs[i])
+                outfile = dbase.outdir.joinpath(dbase.keys[0], '{}.jpg'.format(image_id))
+                cv2.imwrite(str(outfile), f_imgs[i])
 
-                output.append(tuple([os.path.join(filename.parent.name, filename.name), -2] +
-                                    f_landmarks[i].tolist()))
+                output.append(tuple([os.path.join(outfile.parent.name, outfile.name), -2] + f_landmarks[i].tolist()))
 
                 image_id += 1
 

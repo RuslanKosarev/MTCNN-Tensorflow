@@ -47,7 +47,7 @@ def read_bbox_data(ftxt, with_landmark=True):
 
     for line in lines:
         parts = line.split(' ')
-        img_path = ftxt.parent.joinpath(parts[0].replace('\\', os.sep))
+        img_path = parts[0].replace('\\', os.sep)
 
         # bounding box, (x1, y1, x2, y2)
         bbox = [int(_) for _ in (parts[1], parts[3], parts[2], parts[4])]
