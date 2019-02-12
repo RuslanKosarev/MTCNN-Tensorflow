@@ -1,12 +1,10 @@
 # coding: utf-8
 import os
-import random
 from os.path import join, exists
 
 import cv2
 import numpy as np
-import numpy.random as npr
-
+# import random
 from prepare_data.BBox_utils import getDataFromTxt, BBox
 from prepare_data.Landmark_utils import rotate, flip
 from prepare_data.utils import IoU
@@ -37,7 +35,7 @@ def GenerateData(ftxt, data_path, net, argument=False):
     f = open(join(OUTPUT,"landmark_%s_aug.txt" %(size)),'w')
     #dstdir = "train_landmark_few"
     # get image path , bounding box, and landmarks from file 'ftxt'
-    data = getDataFromTxt(ftxt, data_path=data_path)
+    data = getDataFromTxt(ftxt)
     idx = 0
     #image_path bbox landmark(5*2)
     for (imgPath, bbox, landmarkGt) in data:
@@ -45,7 +43,7 @@ def GenerateData(ftxt, data_path, net, argument=False):
         F_imgs = []
         F_landmarks = []
         #print(imgPath)
-        img = cv2.imread(imgPath)
+        img = cv2.imread(os.path.join(data_path,imgPath))
 
         if img is None:
             raise ValueError('image {} is None'.format(imgPath))
@@ -83,9 +81,9 @@ def GenerateData(ftxt, data_path, net, argument=False):
                 continue
             #random shift
             for i in range(10):
-                bbox_size = npr.randint(int(min(gt_w, gt_h) * 0.8), np.ceil(1.25 * max(gt_w, gt_h)))
-                delta_x = npr.randint(-gt_w * 0.2, gt_w * 0.2)
-                delta_y = npr.randint(-gt_h * 0.2, gt_h * 0.2)
+                bbox_size = np.random.randint(int(min(gt_w, gt_h) * 0.8), np.ceil(1.25 * max(gt_w, gt_h)))
+                delta_x = np.random.randint(-gt_w * 0.2, gt_w * 0.2)
+                delta_y = np.random.randint(-gt_h * 0.2, gt_h * 0.2)
                 nx1 = int(max(x1+gt_w/2-bbox_size/2+delta_x,0))
                 ny1 = int(max(y1+gt_h/2-bbox_size/2+delta_y,0))
 
@@ -112,14 +110,14 @@ def GenerateData(ftxt, data_path, net, argument=False):
                     bbox = BBox([nx1,ny1,nx2,ny2])                    
 
                     #mirror                    
-                    if random.choice([0,1]) > 0:
+                    if np.random.choice([0,1]) > 0:
                         face_flipped, landmark_flipped = flip(resized_im, landmark_)
                         face_flipped = cv2.resize(face_flipped, (size, size))
                         #c*h*w
                         F_imgs.append(face_flipped)
                         F_landmarks.append(landmark_flipped.reshape(10))
                     #rotate
-                    if random.choice([0,1]) > 0:
+                    if np.random.choice([0,1]) > 0:
                         face_rotated_by_alpha, landmark_rotated = rotate(img, bbox, \
                                                                          bbox.reprojectLandmark(landmark_), 5)#逆时针旋转
                         #landmark_offset
@@ -135,7 +133,7 @@ def GenerateData(ftxt, data_path, net, argument=False):
                         F_landmarks.append(landmark_flipped.reshape(10))                
                     
                     #anti-clockwise rotation
-                    if random.choice([0,1]) > 0: 
+                    if np.random.choice([0,1]) > 0:
                         face_rotated_by_alpha, landmark_rotated = rotate(img, bbox, \
                                                                          bbox.reprojectLandmark(landmark_), -5)#顺时针旋转
                         landmark_rotated = bbox.projectLandmark(landmark_rotated)
@@ -173,19 +171,22 @@ def GenerateData(ftxt, data_path, net, argument=False):
     #shuffle_in_unison_scary(F_imgs, F_landmarks)
     
     f.close()
+    print(image_id)
     return F_imgs,F_landmarks
 
 
 if __name__ == '__main__':
-    dstdir = "../../DATA/12/train_PNet_landmark_aug"
-    OUTPUT = '../../DATA/12'
-    data_path = '../../DATA'
+    dstdir = "../../data/12/train_PNet_landmark_aug"
+    OUTPUT = '../../data/12'
+    data_path = '../../data/lfw'
 
-    if not exists(OUTPUT):
-        os.mkdir(OUTPUT)
+    # if not exists(OUTPUT):
+    #     os.mkdir(OUTPUT)
     if not exists(dstdir):
         os.mkdir(dstdir)
-    assert (exists(dstdir) and exists(OUTPUT))
+    # assert (exists(dstdir) and exists(OUTPUT))
+
+    np.random.seed(seed=0)
 
     # train data
     net = "PNet"
