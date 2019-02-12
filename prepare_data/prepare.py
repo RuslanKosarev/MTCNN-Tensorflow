@@ -317,7 +317,7 @@ def lfwdbase(dbase, argument=True, seed=None):
                 if np.sum(np.where(f_landmarks[i] >= 1, 1, 0)) > 0:
                     continue
 
-                filename = dbase.outdir.joinpath('{}.jpg'.format(image_id))
+                filename = dbase.outdir.joinpath(dbase.keys[0], '{}.jpg'.format(image_id))
                 cv2.imwrite(str(filename), f_imgs[i])
 
                 output.append(tuple([os.path.join(filename.parent.name, filename.name), -2] +
@@ -325,7 +325,7 @@ def lfwdbase(dbase, argument=True, seed=None):
 
                 image_id += 1
 
-    h5utils.write(dbase.h5out, 'landmark', np.array(output, dtype=MTCNN_config.lfw_dtype))
+    h5utils.write(dbase.h5file, dbase.keys[0], np.array(output, dtype=MTCNN_config.lfw_dtype))
 
 
 def merge(h5out, wider, lfw):

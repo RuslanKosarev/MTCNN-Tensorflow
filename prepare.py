@@ -9,7 +9,7 @@ from prepare_data import tfrecords
 
 
 class WiderDBase:
-    def __init__(self, inpdir=None, outdir=None):
+    def __init__(self, inpdir=None, outdir=None, h5file=None):
         # input directory to wider database
         if inpdir is None:
             inpdir = plib.Path(os.pardir).joinpath('data', 'WIDER_train')
@@ -20,13 +20,18 @@ class WiderDBase:
 
         # output directory for wider database
         if outdir is None:
-            outdir = plib.Path(os.pardir).joinpath('data', '12')
-        self.outdir = plib.Path(outdir).absolute()
+            self.outdir = plib.Path(os.pardir).joinpath('data', '12')
+        else:
+            self.outdir = plib.Path(outdir).absolute()
 
         self.positive = self.outdir.joinpath('positive')
         self.negative = self.outdir.joinpath('negative')
         self.part = self.outdir.joinpath('part')
-        self.h5out = self.outdir.joinpath('dbwider.h5')
+
+        if h5file is None:
+            self.h5out = self.outdir.joinpath('dbwider.h5')
+        else:
+            self.h5out = self.outdir.joinpath(h5file)
 
         for name in (self.positive, self.negative, self.part):
             if not name.exists():
@@ -34,7 +39,7 @@ class WiderDBase:
 
 
 class LFWDBase:
-    def __init__(self, inpdir=None, outdir=None):
+    def __init__(self, inpdir=None, outdir=None, h5file=None):
         # input directory to LFW database
         if inpdir is None:
             inpdir = plib.Path(os.pardir).joinpath('data', 'lfw').absolute()
@@ -43,32 +48,35 @@ class LFWDBase:
 
         # output directory for LFW database
         if outdir is None:
-            outdir = plib.Path(os.pardir).joinpath('data', '12').absolute()
-        outdir = plib.Path(outdir).absolute()
+            self.outdir = plib.Path(os.pardir).joinpath('data', '12').absolute()
+        else:
+            self.outdir = plib.Path(outdir).absolute()
 
-        self.outdir = plib.Path(outdir).joinpath('lfw').absolute()
-        self.h5out = self.outdir.parent.joinpath('dblfw.h5')
+        if h5file is None:
+            self.h5file = self.outdir.joinpath('dblfw.h5')
+        else:
+            self.h5file = self.outdir.joinpath(h5file)
 
-        for name in (self.outdir,):
-            if not name.exists():
-                name.mkdir(parents=True)
+        self.keys = ('landmarks',)
+        for key in self.keys:
+            if not self.outdir.joinpath(key).exists():
+                self.outdir.joinpath(key).mkdir(parents=True)
 
 
 if __name__ == '__main__':
+
     seed = None
+    outdir = plib.Path(os.pardir).joinpath('data', '12')
+    h5file = 'dbtrain.h5'
 
     # prepare wider database
-    wider = WiderDBase()
+    wider = WiderDBase(outdir=outdir, h5file=h5file)
     start = datetime.now()
     prepare.widerdbase(wider, seed=seed)
     print(datetime.now() - start)
 
     # prepare lfw database
-    lfw = LFWDBase()
+    lfw = LFWDBase(outdir=outdir, h5file=h5file)
     start = datetime.now()
     prepare.lfwdbase(lfw, seed=seed)
     print(datetime.now() - start)
-
-    # merge databases
-    train = wider.outdir.joinpath('dbtrain.h5')
-    prepare.merge(train, wider=wider, lfw=lfw)
