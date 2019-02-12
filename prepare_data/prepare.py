@@ -71,8 +71,7 @@ def widerdbase(dbase, seed=None):
                 if not cv2.imwrite(str(filename), resized):
                     raise IOError('file {} has not been written'.format(filename))
 
-                negative.append((os.path.join(filename.parent.name, filename.name), 0,
-                                 np.NaN, np.NaN, np.NaN, np.NaN))
+                negative.append((os.path.join(filename.parent.name, filename.name), 0, 0, 0, 0, 0))
                 n_idx += 1
 
         # for every bounding boxes

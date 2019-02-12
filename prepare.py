@@ -72,11 +72,17 @@ if __name__ == '__main__':
     # prepare wider database
     wider = WiderDBase(outdir=outdir, h5file=h5file)
     start = datetime.now()
-    prepare.widerdbase(wider, seed=seed)
+    # prepare.widerdbase(wider, seed=seed)
     print(datetime.now() - start)
 
     # prepare lfw database
     lfw = LFWDBase(outdir=outdir, h5file=h5file)
     start = datetime.now()
-    prepare.lfwdbase(lfw, seed=seed)
+    # prepare.lfwdbase(lfw, seed=seed)
+    print(datetime.now() - start)
+
+    start = datetime.now()
+    h5file = outdir.joinpath(h5file)
+    tfrecord = outdir.joinpath('dbtrain.tfrecord')
+    tfrecords.pnet_tfrecord(h5file=h5file, tfrecord=tfrecord)
     print(datetime.now() - start)

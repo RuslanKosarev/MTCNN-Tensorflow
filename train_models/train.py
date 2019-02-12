@@ -93,7 +93,7 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train_pnet(input, prefix, number_of_epochs, base_dir, display=100, lr=0.01, seed=None):
+def train_pnet(tfrecord, input, prefix, number_of_epochs, base_dir, display=100, lr=0.01, seed=None):
     """
     train PNet/RNet/ONet
     :param net_factory:
@@ -105,9 +105,9 @@ def train_pnet(input, prefix, number_of_epochs, base_dir, display=100, lr=0.01, 
     :return:
     """
     np.random.seed(seed=seed)
-    label_file = base_dir.joinpath('train_landmark.txt')
+    #label_file = base_dir.joinpath('train_landmark.txt')
 
-    num = len(readlines(label_file))
+    num = 100000#len(readlines(label_file))
     print("Total size of the dataset is: ", num)
     print(input)
 
@@ -115,7 +115,7 @@ def train_pnet(input, prefix, number_of_epochs, base_dir, display=100, lr=0.01, 
     dataset_dir = input.joinpath('train_PNet_landmark.tfrecord')
     print('dataset dir is:', dataset_dir)
 
-    tfdata = read_single_tfrecord(dataset_dir, config.BATCH_SIZE, 'PNet')
+    tfdata = read_single_tfrecord(tfrecord, config.BATCH_SIZE, 'PNet')
 
     # landmark_dir
     image_size = 12
