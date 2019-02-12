@@ -324,6 +324,7 @@ def lfwdbase(dbase, argument=True, seed=None):
 
                 image_id += 1
 
+    print('\n')
     h5utils.write(dbase.h5file, dbase.keys[0], np.array(output, dtype=MTCNN_config.lfw_dtype))
 
 
