@@ -5,14 +5,14 @@ import h5py
 from easydict import EasyDict as edict
 
 wider_dtype = np.dtype([('path', h5py.special_dtype(vlen=str)),
-                        ('flag', np.int8),
+                        ('label', np.int8),
                         ('1', np.float),
                         ('2', np.float),
                         ('3', np.float),
                         ('4', np.float)])
 
 lfw_dtype = np.dtype([('path', h5py.special_dtype(vlen=str)),
-                      ('flag', np.int8),
+                      ('label', np.int8),
                       ('1', np.float),
                       ('2', np.float),
                       ('3', np.float),
