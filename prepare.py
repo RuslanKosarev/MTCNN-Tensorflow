@@ -65,14 +65,14 @@ class LFWDBase:
 
 if __name__ == '__main__':
 
-    seed = None
+    seed = 0
     outdir = plib.Path(os.pardir).joinpath('data', '12').absolute()
     h5file = 'dbtrain.h5'
 
     # prepare wider database
     wider = WiderDBase(outdir=outdir, h5file=h5file)
     start = datetime.now()
-    #prepare.widerdbase(wider, seed=seed)
+    prepare.widerdbase(wider, seed=seed)
     print(datetime.now() - start)
 
     # prepare lfw database
@@ -80,10 +80,9 @@ if __name__ == '__main__':
     start = datetime.now()
     prepare.lfwdbase(lfw, seed=seed)
     print(datetime.now() - start)
-    exit(0)
 
     start = datetime.now()
     h5file = outdir.joinpath(h5file)
     tfrecord = outdir.joinpath('dbtrain.tfrecord')
-    tfrecords.pnet_tfrecord(tfrecord, h5file, outdir)
+    tfrecords.pnet_tfrecord(h5file, tfrecord, seed=seed)
     print(datetime.now() - start)

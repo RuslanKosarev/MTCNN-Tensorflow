@@ -9,7 +9,7 @@ import argparse
 import os
 import pickle as pickle
 import cv2
-from train_models.mtcnn_model import P_Net, R_Net, O_Net
+from train_models.mtcnn_model import PNet, R_Net, O_Net
 from train_models.MTCNN_config import config
 from prepare_data.loader import TestLoader
 from Detection.detector import Detector

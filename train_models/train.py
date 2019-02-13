@@ -8,26 +8,24 @@ import cv2
 import tensorflow as tf
 
 from tensorboard.plugins import projector
-from prepare_data.utils import readlines
 from train_models.MTCNN_config import config
 from prepare_data.read_tfrecords import read_multi_tfrecords, read_single_tfrecord
 from train_models.mtcnn_model import PNet
 
 
-def train_model(base_lr, loss, data_num):
+def train_model(base_lr, loss, iterations):
     """
-    train model
-    :param base_lr: base learning rate
-    :param loss: loss
-    :param data_num:
+
+    :param base_lr:
+    :param loss:
+    :param iterations:
     :return:
-    train_op, lr_op
     """
     lr_factor = 0.1
     global_step = tf.Variable(0, trainable=False)
     # LR_EPOCH [8,14]
     # boundaried [num_batch,num_batch]
-    boundaries = [int(epoch * data_num / config.BATCH_SIZE) for epoch in config.LR_EPOCH]
+    boundaries = [int(epoch * iterations) for epoch in config.LR_EPOCH]
     # lr_values[0.01,0.001,0.0001,0.00001]
     lr_values = [base_lr * (lr_factor ** x) for x in range(0, len(config.LR_EPOCH) + 1)]
     # control learning rate
@@ -93,15 +91,15 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train_pnet(tfrecord, prefix, number_of_epochs, display=100, lr=0.01, seed=None):
+def train_pnet(tfrecord, prefix, number_of_steps, display=100, lr=0.01, seed=None):
     """
-    train PNet/RNet/ONet
-    :param net_factory:
-    :param input: model path
-    :param number_of_epochs:
-    :param dataset:
+
+    :param tfrecord:
+    :param prefix:
+    :param number_of_steps:
     :param display:
     :param lr:
+    :param seed:
     :return:
     """
     np.random.seed(seed=seed)
@@ -109,11 +107,6 @@ def train_pnet(tfrecord, prefix, number_of_epochs, display=100, lr=0.01, seed=No
     logdir = prefix.parent.joinpath('logs')
     if not logdir.exists():
         logdir.mkdir(parents=True)
-
-    #label_file = base_dir.joinpath('train_landmark.txt')
-    num = 100000#len(readlines(label_file))
-    print("Total size of the dataset is: ", num)
-    print(input)
 
     tfdata = read_single_tfrecord(tfrecord, config.BATCH_SIZE, 'PNet')
 
@@ -135,7 +128,7 @@ def train_pnet(tfrecord, prefix, number_of_epochs, display=100, lr=0.01, seed=No
 
     # train,update learning rate(3 loss)
     total_loss = radio_cls_loss * net.cls_loss + radio_bbox_loss * net.bbox_loss + radio_landmark_loss * net.landmark_loss + net.l2_loss
-    train_op, lr_op = train_model(lr, total_loss, num)
+    train_op, lr_op = train_model(lr, total_loss, config.number_of_iterations)
 
     # init
     init = tf.global_variables_initializer()
@@ -164,7 +157,7 @@ def train_pnet(tfrecord, prefix, number_of_epochs, display=100, lr=0.01, seed=No
     sess.graph.finalize()
 
     # total steps
-    number_of_iterations = int(num / config.BATCH_SIZE + 1) * number_of_epochs
+    number_of_iterations = config.number_of_iterations * number_of_steps
 
     try:
         for iter in range(number_of_iterations):
@@ -181,8 +174,9 @@ def train_pnet(tfrecord, prefix, number_of_epochs, display=100, lr=0.01, seed=No
                                                                                label: label_batch_array,
                                                                                bbox_target: bbox_batch_array,
                                                                                landmark_target: landmark_batch_array})
+            final = (iter+1) == number_of_iterations
 
-            if (iter + 1) % display == 0:
+            if (iter+1) % display == 0 or final:
                 fetches = (net.cls_loss, net.bbox_loss, net.landmark_loss, net.l2_loss, net.accuracy, total_loss, lr_op)
                 names = ('cls loss', 'bbox loss', 'landmark loss', 'l2 loss', 'accuracy', 'total loss', 'lr')
 
@@ -197,11 +191,11 @@ def train_pnet(tfrecord, prefix, number_of_epochs, display=100, lr=0.01, seed=No
 
                 print(info)
 
-            # save every epoch
-            if (iter+1) % (number_of_iterations/number_of_epochs) == 0:
-                epoch = int((iter+1) / (number_of_iterations/number_of_epochs))
-                path_prefix = saver.save(sess, str(prefix), global_step=epoch)
-                print('path prefix is:', path_prefix, ' epoch', epoch, '/', number_of_epochs)
+            # save every step
+            if (iter+1) % (number_of_iterations/number_of_steps) == 0 or final:
+                step = int(number_of_steps*(iter+1)/number_of_iterations)
+                path_prefix = saver.save(sess, str(prefix), global_step=step)
+                print('path prefix is:', path_prefix, 'step', step, '/', number_of_steps)
                 writer.add_summary(summary, global_step=iter)
 
     except tf.errors.OutOfRangeError:

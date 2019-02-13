@@ -10,10 +10,10 @@ if __name__ == '__main__':
     base_dir = plib.Path(os.pardir).joinpath('data', '12').absolute()
     prefix = base_dir.joinpath('PNet', 'PNet')
 
-    number_of_epochs = 10
+    number_of_steps = 30
     display = 100
     lr = 0.001
 
     tfrecord = base_dir.joinpath('dbtrain.tfrecord')
-    train.train_pnet(tfrecord, prefix, number_of_epochs, display=display, lr=lr)
+    train.train_pnet(tfrecord, prefix, number_of_steps, display=display, lr=lr)
 
