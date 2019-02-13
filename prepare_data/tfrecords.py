@@ -103,6 +103,6 @@ def pnet_tfrecord(tfrecord, h5file, outdir, seed=None):
             if (i+1) % 100 == 0:
                 print('\r{}/{} samples have been written.'.format(i+1, len(tfdata)), end='')
 
-    print('\rtfrecord file {} has been written, batch size is {}.'.format(tfrecord, config.batch_size))
+    print('\rtfrecord file {} has been written, batch size is {}.'.format(tfrecord, len(tfdata)))
 
 
