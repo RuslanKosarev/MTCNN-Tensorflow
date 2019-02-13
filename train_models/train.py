@@ -93,7 +93,7 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train_pnet(tfrecord, input, prefix, number_of_epochs, base_dir, display=100, lr=0.01, seed=None):
+def train_pnet(tfrecord, prefix, number_of_epochs, display=100, lr=0.01, seed=None):
     """
     train PNet/RNet/ONet
     :param net_factory:
@@ -105,15 +105,15 @@ def train_pnet(tfrecord, input, prefix, number_of_epochs, base_dir, display=100,
     :return:
     """
     np.random.seed(seed=seed)
-    #label_file = base_dir.joinpath('train_landmark.txt')
 
+    logdir = prefix.parent.joinpath('logs')
+    if not logdir.exists():
+        logdir.mkdir(parents=True)
+
+    #label_file = base_dir.joinpath('train_landmark.txt')
     num = 100000#len(readlines(label_file))
     print("Total size of the dataset is: ", num)
     print(input)
-
-    # PNet use this method to get data
-    dataset_dir = input.joinpath('train_PNet_landmark.tfrecord')
-    print('dataset dir is:', dataset_dir)
 
     tfdata = read_single_tfrecord(tfrecord, config.BATCH_SIZE, 'PNet')
 
@@ -152,10 +152,6 @@ def train_pnet(tfrecord, input, prefix, number_of_epochs, base_dir, display=100,
     tf.summary.scalar('cls_accuracy', net.accuracy)
     tf.summary.scalar('total_loss', total_loss)
     summary_op = tf.summary.merge_all()
-
-    logdir = prefix.parent.joinpath('logs')
-    if not logdir.exists():
-        logdir.mkdir(parents=True)
 
     writer = tf.summary.FileWriter(str(logdir), sess.graph)
     projector_config = projector.ProjectorConfig()
