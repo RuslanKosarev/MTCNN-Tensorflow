@@ -19,51 +19,43 @@ def add_to_tfrecord(writer, filename, data):
 def get_dataset(inpdata):
 
     outdata = []
+    rect = ('xmin', 'ymin', 'xmax', 'ymax')
+    landmarks = ('xlefteye', 'ylefteye',
+                 'xrighteye', 'yrighteye',
+                 'xnose', 'ynose',
+                 'xleftmouth', 'yleftmouth',
+                 'xrightmouth', 'yrightmouth')
 
-    for sample in inpdata:
-        bbox = dict()
-        bbox['xmin'] = 0
-        bbox['ymin'] = 0
-        bbox['xmax'] = 0
-        bbox['ymax'] = 0
-        bbox['xlefteye'] = 0
-        bbox['ylefteye'] = 0
-        bbox['xrighteye'] = 0
-        bbox['yrighteye'] = 0
-        bbox['xnose'] = 0
-        bbox['ynose'] = 0
-        bbox['xleftmouth'] = 0
-        bbox['yleftmouth'] = 0
-        bbox['xrightmouth'] = 0
-        bbox['yrightmouth'] = 0
+    for values in inpdata:
+        bbox = {x: 0 for x in rect + landmarks}
 
-        if len(sample) == 6:
-            bbox['xmin'] = float(sample[2])
-            bbox['ymin'] = float(sample[3])
-            bbox['xmax'] = float(sample[4])
-            bbox['ymax'] = float(sample[5])
-        if len(sample) == 12:
-            bbox['xlefteye'] = float(sample[2])
-            bbox['ylefteye'] = float(sample[3])
-            bbox['xrighteye'] = float(sample[4])
-            bbox['yrighteye'] = float(sample[5])
-            bbox['xnose'] = float(sample[6])
-            bbox['ynose'] = float(sample[7])
-            bbox['xleftmouth'] = float(sample[8])
-            bbox['yleftmouth'] = float(sample[9])
-            bbox['xrightmouth'] = float(sample[10])
-            bbox['yrightmouth'] = float(sample[11])
+        if len(values) == 6:
+            bbox['xmin'] = values[2]
+            bbox['ymin'] = values[3]
+            bbox['xmax'] = values[4]
+            bbox['ymax'] = values[5]
+        else:
+            bbox['xlefteye'] = values[2]
+            bbox['ylefteye'] = values[3]
+            bbox['xrighteye'] = values[4]
+            bbox['yrighteye'] = values[5]
+            bbox['xnose'] = values[6]
+            bbox['ynose'] = values[7]
+            bbox['xleftmouth'] = values[8]
+            bbox['yleftmouth'] = values[9]
+            bbox['xrightmouth'] = values[10]
+            bbox['yrightmouth'] = values[11]
 
-        row = dict()
-        row['filename'] = sample[0]
-        row['label'] = int(sample[1])
-        row['bbox'] = bbox
-        outdata.append(row)
+        sample = dict()
+        sample['filename'] = values[0]
+        sample['label'] = values[1]
+        sample['bbox'] = bbox
+        outdata.append(sample)
 
     return outdata
 
 
-def pnet_tfrecord(tfrecord, h5file, outdir, seed=None):
+def pnet_tfrecord(h5file, tfrecord, seed=None):
     """
 
     :param tfrecord:
@@ -97,11 +89,11 @@ def pnet_tfrecord(tfrecord, h5file, outdir, seed=None):
 
     with tf.python_io.TFRecordWriter(str(tfrecord)) as writer:
         for i, sample in enumerate(tfdata):
-            filename = outdir.joinpath(sample['filename'])
+            filename = h5file.parent.joinpath(sample['filename'])
             add_to_tfrecord(writer, filename, sample)
 
             if (i+1) % 100 == 0:
-                print('\r{}/{} samples have been written.'.format(i+1, len(tfdata)), end='')
+                print('\r{}/{} samples have been added to tfrecord file.'.format(i+1, len(tfdata)), end='')
 
     print('\rtfrecord file {} has been written, batch size is {}.'.format(tfrecord, len(tfdata)))
 
