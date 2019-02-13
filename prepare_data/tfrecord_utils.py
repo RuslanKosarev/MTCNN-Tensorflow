@@ -180,7 +180,7 @@ def _process_image(filename, coder):
 def process_image_without_coder(filename):
     image = cv2.imread(str(filename))
     if image is None:
-        raise IOError('file {}'.format(filename))
+        raise IOError('an error occurred while reading the file {}'.format(filename))
 
     image_data = image.tostring()
     assert len(image.shape) == 3
