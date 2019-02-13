@@ -60,14 +60,14 @@ def pnet_tfrecord(h5file, tfrecord, seed=None):
         os.remove(str(tfrecord))
 
     # get data from the h5 file
-    pnet_ratio = config.pnet_ratio
     keys = ('positive', 'negative', 'part', 'landmark')
+    ratios = config.pnet_ratio
 
     tfdata = []
 
-    for key, ratio in zip(keys, pnet_ratio):
+    for key, ratio in zip(keys, ratios):
         data = h5utils.read(h5file, key)
-        size = int(config.batch_size*ratio/sum(pnet_ratio))
+        size = int(config.tfrecord_size*ratio/sum(ratios))
         if size < len(data):
             data = np.random.choice(data, size=int(size))
         tfdata += data2sample(data)

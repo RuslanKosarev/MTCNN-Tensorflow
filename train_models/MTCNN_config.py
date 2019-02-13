@@ -26,7 +26,7 @@ lfw_dtype = np.dtype([('path', h5py.special_dtype(vlen=str)),
 
 config = edict()
 config.BATCH_SIZE = 384
-config.batch_size = 100000
+config.tfrecord_size = 100000
 config.pnet_ratio = [1, 3, 1, 1]
 
 
