@@ -16,7 +16,7 @@ def add_to_tfrecord(writer, filename, data):
     writer.write(example.SerializeToString())
 
 
-def get_dataset(inpdata):
+def data2sample(inpdata):
 
     outdata = []
     rect = ('xmin', 'ymin', 'xmax', 'ymax')
@@ -27,29 +27,19 @@ def get_dataset(inpdata):
                  'xrightmouth', 'yrightmouth')
 
     for values in inpdata:
-        bbox = {x: 0 for x in rect + landmarks}
-
-        if len(values) == 6:
-            bbox['xmin'] = values[2]
-            bbox['ymin'] = values[3]
-            bbox['xmax'] = values[4]
-            bbox['ymax'] = values[5]
-        else:
-            bbox['xlefteye'] = values[2]
-            bbox['ylefteye'] = values[3]
-            bbox['xrighteye'] = values[4]
-            bbox['yrighteye'] = values[5]
-            bbox['xnose'] = values[6]
-            bbox['ynose'] = values[7]
-            bbox['xleftmouth'] = values[8]
-            bbox['yleftmouth'] = values[9]
-            bbox['xrightmouth'] = values[10]
-            bbox['yrightmouth'] = values[11]
-
         sample = dict()
         sample['filename'] = values[0]
         sample['label'] = values[1]
-        sample['bbox'] = bbox
+        sample['bbox'] = {x: 0 for x in rect + landmarks}
+
+        values = list(values)[2:]
+
+        if len(values) == 4:
+            for key, value in zip(rect, values):
+                sample['bbox'][key] = value
+        else:
+            for key, value in zip(landmarks, values):
+                sample['bbox'][key] = value
         outdata.append(sample)
 
     return outdata
@@ -70,20 +60,17 @@ def pnet_tfrecord(h5file, tfrecord, seed=None):
         os.remove(str(tfrecord))
 
     # get data from the h5 file
+    pnet_ratio = config.pnet_ratio
     keys = ('positive', 'negative', 'part', 'landmark')
-    # ratios = np.array([1, 3, 1, 1])
-    sizes = np.array([1, 3, 1, np.NaN])*250000
+
     tfdata = []
 
-    for key, size in zip(keys, sizes):
+    for key, ratio in zip(keys, pnet_ratio):
         data = h5utils.read(h5file, key)
-        if np.isnan(size):
-            # size = config.batch_size - len(tfdata)
-            tfdata += get_dataset(data)
-        else:
-            # size = int(config.batch_size*ratio/ratios.sum())
-            random_sample = np.random.choice(data, size=int(size))
-            tfdata += get_dataset(random_sample)
+        size = int(config.batch_size*ratio/sum(pnet_ratio))
+        if size < len(data):
+            data = np.random.choice(data, size=int(size))
+        tfdata += data2sample(data)
 
     np.random.shuffle(tfdata)
 
