@@ -1,8 +1,9 @@
 # coding:utf-8
+__author__ = 'Ruslan N. Kosarev'
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.contrib import slim
-import numpy as np
 
 num_keep_radio = 0.7
 
@@ -165,18 +166,9 @@ def cal_accuracy(cls_prob,label):
 
 
 def activation_summary(x):
-    '''
-    creates a summary provides histogram of activations
-    creates a summary that measures the sparsity of activations
-
-    :param x: Tensor
-    :return:
-    '''
-
     tensor_name = x.op.name
-    print('load summary for : ',tensor_name)
-    tf.summary.histogram(tensor_name + '/activations',x)
-    #tf.summary.scalar(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
+    print('load summary for : ', tensor_name)
+    tf.summary.histogram(tensor_name + '/activations', x)
 
 
 # construct PNet
