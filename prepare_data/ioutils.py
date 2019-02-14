@@ -7,3 +7,10 @@ import cv2
 def write_image(image, filename):
     if not cv2.imwrite(str(filename), image):
         raise IOError('while writing the file {}.'.format(filename))
+
+
+def read_image(filename):
+    image = cv2.imread(str(filename))
+    if image is None:
+        raise IOError('while reading the file {}.'.format(filename))
+    return image
