@@ -8,7 +8,7 @@ from train_models import train
 
 if __name__ == '__main__':
     base_dir = plib.Path(os.pardir).joinpath('data', '12').absolute()
-    prefix = base_dir.joinpath('PNet', 'PNet')
+    prefix = plib.Path(os.pardir).joinpath('mtcnn', 'PNet', 'PNet')
 
     number_of_steps = 10
     display = 100
