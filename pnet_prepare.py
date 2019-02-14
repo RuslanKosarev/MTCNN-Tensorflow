@@ -5,7 +5,6 @@ import os
 import pathlib as plib
 from datetime import datetime
 from prepare_data import prepare
-from prepare_data import tfrecords
 
 
 class WiderDBase:
@@ -79,10 +78,4 @@ if __name__ == '__main__':
     lfw = LFWDBase(outdir=outdir, h5file=h5file)
     start = datetime.now()
     prepare.lfwdbase(lfw, seed=seed)
-    print(datetime.now() - start)
-
-    start = datetime.now()
-    h5file = outdir.joinpath(h5file)
-    tfrecord = outdir.joinpath('dbtrain.tfrecord')
-    tfrecords.pnet_tfrecord(h5file, tfrecord, seed=seed)
     print(datetime.now() - start)

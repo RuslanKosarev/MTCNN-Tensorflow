@@ -10,7 +10,7 @@ if __name__ == '__main__':
     base_dir = plib.Path(os.pardir).joinpath('data', '12').absolute()
     prefix = base_dir.joinpath('PNet', 'PNet')
 
-    number_of_steps = 30
+    number_of_steps = 10
     display = 100
     lr = 0.001
 
