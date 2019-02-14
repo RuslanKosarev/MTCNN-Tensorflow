@@ -2,15 +2,11 @@
 import os
 import sys
 import tensorflow as tf
-sys.path.append("../")
-from train_models.MTCNN_config import config
 
 
-class FcnDetector(object):
-    #net_factory: which net
-    #model_path: where the params'file is
+class FcnDetector:
     def __init__(self, net_factory, model_path):
-        #create a graph
+        # create a graph
         graph = tf.Graph()
         with graph.as_default():
             #define tensor and op in graph(-1,1)
@@ -23,7 +19,9 @@ class FcnDetector(object):
             #construct model here
             #self.cls_prob, self.bbox_pred = net_factory(image_reshape, training=False)
             #contains landmark
-            self.cls_prob, self.bbox_pred, _ = net_factory(image_reshape, training=False)
+            net = net_factory(image_reshape, training=False)
+            self.cls_prob = net.cls_pro_test
+            self.bbox_pred = net.bbox_pred_test
             
             # allow
             self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, gpu_options=tf.GPUOptions(allow_growth=True)))
@@ -44,8 +42,7 @@ class FcnDetector(object):
 
     def predict(self, databatch):
         height, width, _ = databatch.shape
-        # print(height, width)
         cls_prob, bbox_pred = self.sess.run([self.cls_prob, self.bbox_pred],
-                                                           feed_dict={self.image_op: databatch, self.width_op: width,
-                                                                      self.height_op: height})
+                                            feed_dict={self.image_op: databatch,
+                                                       self.width_op: width, self.height_op: height})
         return cls_prob, bbox_pred
