@@ -15,5 +15,5 @@ if __name__ == '__main__':
     lr = 0.001
 
     tfrecord = base_dir.joinpath('dbtrain.tfrecord')
-    train.train_pnet(tfrecord, prefix, number_of_steps, display=display, lr=lr)
+    train.train(tfrecord, prefix, number_of_steps, display=display, lr=lr)
 

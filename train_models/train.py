@@ -91,7 +91,7 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train_pnet(tfrecord, prefix, number_of_steps, display=100, lr=0.01, seed=None):
+def train(tfrecord, prefix, number_of_steps, display=100, lr=0.01, seed=None):
     """
 
     :param tfrecord:
