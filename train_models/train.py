@@ -95,6 +95,7 @@ def image_color_distort(inputs):
 def train(netconfig, tfrecord, prefix, display=100, lr=0.01, seed=None):
     """
 
+    :param netconfig:
     :param tfrecord:
     :param prefix:
     :param display:
@@ -207,7 +208,7 @@ def train(netconfig, tfrecord, prefix, display=100, lr=0.01, seed=None):
                                                      landmark_target: landmark_batch_array})
 
                 names = ('cls loss', 'bbox loss', 'landmark loss', 'l2 loss', 'accuracy', 'total loss', 'lr')
-                info = '{}: step: {}/{}'.format(datetime.now(), it + 1, number_of_iterations)
+                info = '{}: iteration: {}/{}'.format(datetime.now(), it + 1, number_of_iterations)
                 for name, value in zip(names, values):
                     info += ', {}: {:0.4f}'.format(name, value)
 
