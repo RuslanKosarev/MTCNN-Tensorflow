@@ -49,30 +49,33 @@ class LFWDBase:
                 self.outdir.joinpath(key).mkdir(parents=True)
 
 
+# ======================================================================================================================
+batch_size = 384
+min_face_size = 20
+
+
 # config to train P-Net (prediction net)
 class PNetConfig:
     image_size = 12
+    number_of_epochs = 30
+    number_of_iterations = 10000
+    lr = 0.001
+    batch_size = batch_size
 
 
-# ======================================================================================================================
 # config to train R-Net (refinement net)
 class RNetConfig:
     image_size = 24
     number_of_epochs = 30
     number_of_iterations = 10000
     lr = 0.001
-    batch_size = 500
+    batch_size = batch_size
 
 
-# ======================================================================================================================
 # config to train O-Net (output net)
 class ONetConfig:
     image_size = 48
-
-
-class MTCNNConfig:
-    pnet = PNetConfig()
-    rnet = RNetConfig()
-    onet = ONetConfig()
-
-    min_face_size = 20
+    number_of_epochs = 30
+    number_of_iterations = 10000
+    lr = 0.001
+    batch_size = batch_size

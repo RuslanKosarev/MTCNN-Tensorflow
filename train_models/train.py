@@ -92,14 +92,13 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train(netconfig, tfrecord, prefix, display=100, lr=0.01, seed=None):
+def train(netconfig, tfrecord, prefix, display=100, seed=None):
     """
 
     :param netconfig:
     :param tfrecord:
     :param prefix:
     :param display:
-    :param lr:
     :param seed:
     :return:
     """
@@ -153,7 +152,7 @@ def train(netconfig, tfrecord, prefix, display=100, lr=0.01, seed=None):
 
     # initialize total loss
     total_loss = radio_cls_loss * net.cls_loss + radio_bbox_loss * net.bbox_loss + radio_landmark_loss * net.landmark_loss + net.l2_loss
-    train_op, lr_op = train_model(lr, total_loss, netconfig.number_of_iterations)
+    train_op, lr_op = train_model(netconfig.lr, total_loss, netconfig.number_of_iterations)
 
     init = tf.global_variables_initializer()
     sess = tf.Session()
@@ -210,7 +209,7 @@ def train(netconfig, tfrecord, prefix, display=100, lr=0.01, seed=None):
                 names = ('cls loss', 'bbox loss', 'landmark loss', 'l2 loss', 'accuracy', 'total loss', 'lr')
                 info = '{}: iteration: {}/{}'.format(datetime.now(), it + 1, number_of_iterations)
                 for name, value in zip(names, values):
-                    info += ', {}: {:0.4f}'.format(name, value)
+                    info += ', {}: {:0.5f}'.format(name, value)
 
                 print(info)
 
