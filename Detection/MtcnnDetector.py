@@ -404,84 +404,65 @@ class MtcnnDetector(object):
         landmarks = []
         batch_idx = 0
 
-        sum_time = 0
-        t1_sum = 0
-        t2_sum = 0
-        t3_sum = 0
+        # elapsed times to detect faces
+        elapsed_time = [0, 0, 0]
         num_of_img = test_data.size
         empty_array = np.array([])
         # test_data is iter_
-        s_time = time.time()
+        start_time = time.time()
+
         for databatch in test_data:
-            # databatch(image returned)
             batch_idx += 1
             if batch_idx % 100 == 0:
-                c_time = (time.time() - s_time )/100
-                print("%d out of %d images done" % (batch_idx ,test_data.size))
-                print('%f seconds for each image' % c_time)
-                s_time = time.time()
-
+                print("%d out of %d images done" % (batch_idx, test_data.size))
+                print((time.time() - start_time)/100, 'seconds for each image')
+                start_time = time.time()
 
             im = databatch
-            # pnet
 
+            # apply P-Net detector
+            if self.pnet_detector is None:
+                raise ValueError('P-Net detector is None')
 
-            if self.pnet_detector:
-                st = time.time()
-                # ignore landmark
-                boxes, boxes_c, landmark = self.detect_pnet(im)
+            st = time.time()
+            boxes, boxes_c, landmark = self.detect_pnet(im)
+            elapsed_time[0] += time.time() - st
 
-                t1 = time.time() - st
-                sum_time += t1
-                t1_sum += t1
-                if boxes_c is None:
-                    print("boxes_c is None...")
-                    all_boxes.append(empty_array)
-                    # pay attention
-                    landmarks.append(empty_array)
+            if boxes_c is None:
+                print("boxes_c is None...")
+                all_boxes.append(empty_array)
+                landmarks.append(empty_array)
+                continue
 
-                    continue
-                #print(all_boxes)
-
-            # rnet
-
+            # apply R-Net detector
             if self.rnet_detector:
-                t = time.time()
-                # ignore landmark
+                st = time.time()
                 boxes, boxes_c, landmark = self.detect_rnet(im, boxes_c)
-                t2 = time.time() - t
-                sum_time += t2
-                t2_sum += t2
+                elapsed_time[1] += time.time() - st
+
                 if boxes_c is None:
                     all_boxes.append(empty_array)
                     landmarks.append(empty_array)
-
                     continue
-            # onet
 
+            # apply O-Net detector
             if self.onet_detector:
-                t = time.time()
+                st = time.time()
                 boxes, boxes_c, landmark = self.detect_onet(im, boxes_c)
-                t3 = time.time() - t
-                sum_time += t3
-                t3_sum += t3
+                elapsed_time[2] += time.time() - st
                 if boxes_c is None:
                     all_boxes.append(empty_array)
                     landmarks.append(empty_array)
-
                     continue
 
             all_boxes.append(boxes_c)
             landmark = [1]
             landmarks.append(landmark)
-        print('num of images', num_of_img)
-        print("time cost in average" +
-            '{:.3f}'.format(sum_time/num_of_img) +
-            '  pnet {:.3f}  rnet {:.3f}  onet {:.3f}'.format(t1_sum/num_of_img, t2_sum/num_of_img,t3_sum/num_of_img))
 
-
-        # num_of_data*9,num_of_data*10
-        print('boxes length:',len(all_boxes))
+        print('number of images', num_of_img)
+        print('time cost in average {:.3f}'.format(sum(elapsed_time)/num_of_img))
+        print('pnet {:.3f}, rnet {:.3f}, onet {:.3f}'.format(elapsed_time[0]/num_of_img, elapsed_time[1]/num_of_img, elapsed_time[2]/num_of_img))
+        print('boxes length:', len(all_boxes))
         return all_boxes, landmarks
 
     def detect_single_image(self, im):
