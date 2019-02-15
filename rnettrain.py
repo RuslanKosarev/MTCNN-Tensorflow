@@ -4,15 +4,20 @@ __author__ = 'Ruslan N. Kosarev'
 import os
 import pathlib as plib
 from train_models import train
+import config
 
 
 if __name__ == '__main__':
     base_dir = plib.Path(os.pardir).joinpath('data', 'rnet').absolute()
+    tfrecord = plib.Path(os.pardir).joinpath('data', 'rnet', 'rnet').absolute()
+
     prefix = plib.Path(os.pardir).joinpath('mtcnn', 'RNet', 'RNet').absolute()
 
-    number_of_epochs = 30
-    lr = 0.001
+    netconfig = config.RNetConfig()
+    keys = ('positive', 'negative', 'part', 'landmark')
 
-    tfrecord = base_dir.joinpath('dbtrain.tfrecord')
-    train.train(tfrecord, prefix, number_of_epochs, lr=lr)
+    tfrecords = []
+    for key in keys:
+        tfrecords.append(tfrecord.with_name(tfrecord.name + key).with_suffix('.tfrecord'))
 
+    train.train(netconfig, tfrecords, prefix)

@@ -58,6 +58,10 @@ class PNetConfig:
 # config to train R-Net (refinement net)
 class RNetConfig:
     image_size = 24
+    number_of_epochs = 30
+    number_of_iterations = 10000
+    lr = 0.001
+    batch_size = 1000
 
 
 # ======================================================================================================================

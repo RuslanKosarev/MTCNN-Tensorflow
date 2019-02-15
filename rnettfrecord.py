@@ -5,7 +5,7 @@ import os
 import pathlib as plib
 from datetime import datetime
 from prepare_data import tfrecords
-import mtcnn_config
+import config
 
 
 if __name__ == '__main__':

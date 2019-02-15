@@ -8,9 +8,9 @@ import cv2
 import tensorflow as tf
 
 from tensorboard.plugins import projector
-from train_models.MTCNN_config import config
 from prepare_data.read_tfrecords import read_multi_tfrecords, read_single_tfrecord
-from train_models.mtcnn_model import PNet
+from train_models.mtcnn_model import PNet, RNet
+import config
 
 
 def train_model(base_lr, loss, iterations):
@@ -21,6 +21,7 @@ def train_model(base_lr, loss, iterations):
     :param iterations:
     :return:
     """
+    from train_models.MTCNN_config import config
     lr_factor = 0.1
     global_step = tf.Variable(0, trainable=False)
     # LR_EPOCH [8,14]
@@ -91,12 +92,11 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train(tfrecord, prefix, number_of_steps, display=100, lr=0.01, seed=None):
+def train(netconfig, tfrecord, prefix, display=100, lr=0.01, seed=None):
     """
 
     :param tfrecord:
     :param prefix:
-    :param number_of_steps:
     :param display:
     :param lr:
     :param seed:
@@ -106,31 +106,54 @@ def train(tfrecord, prefix, number_of_steps, display=100, lr=0.01, seed=None):
 
     logdir = prefix.parent.joinpath('logs')
     if not logdir.exists():
-        logdir.mkdir(parents=True)
+        logdir.mkdir()
 
-    tfdata = read_single_tfrecord(tfrecord, config.BATCH_SIZE, 'PNet')
-
-    # landmark_dir
-    image_size = 12
+    image_size = netconfig.image_size
     radio_cls_loss = 1.0
     radio_bbox_loss = 0.5
     radio_landmark_loss = 0.5
 
+    batch_size = netconfig.batch_size
+
+    if type(netconfig) is config.PNetConfig:
+        tfdata = read_single_tfrecord(netconfig, tfrecord, batch_size)
+    else:
+        pos_radio = 1/6
+        part_radio = 1/6
+        landmark_radio = 1/6
+        neg_radio = 1/2
+
+        pos_batch_size = int(batch_size*pos_radio)
+        part_batch_size = int(batch_size*part_radio)
+        neg_batch_size = int(batch_size*neg_radio)
+        landmark_batch_size = int(batch_size*landmark_radio)
+
+        batch_sizes = [pos_batch_size, part_batch_size, neg_batch_size, landmark_batch_size]
+        batch_size = sum(batch_sizes)
+        tfdata = read_multi_tfrecords(netconfig, tfrecord, batch_sizes)
+
     # define placeholder
-    input_image = tf.placeholder(tf.float32, shape=[config.BATCH_SIZE, image_size, image_size, 3], name='input_image')
-    label = tf.placeholder(tf.float32, shape=[config.BATCH_SIZE], name='label')
-    bbox_target = tf.placeholder(tf.float32, shape=[config.BATCH_SIZE, 4], name='bbox_target')
-    landmark_target = tf.placeholder(tf.float32, shape=[config.BATCH_SIZE, 10], name='landmark_target')
+    input_image = tf.placeholder(tf.float32, shape=[batch_size, image_size, image_size, 3], name='input_image')
+    label = tf.placeholder(tf.float32, shape=[batch_size], name='label')
+    bbox_target = tf.placeholder(tf.float32, shape=[batch_size, 4], name='bbox_target')
+    landmark_target = tf.placeholder(tf.float32, shape=[batch_size, 10], name='landmark_target')
 
     # get loss and accuracy
     input_image = image_color_distort(input_image)
-    net = PNet(input_image, label, bbox_target, landmark_target, training=True)
 
-    # train,update learning rate(3 loss)
+    if type(netconfig) is config.PNetConfig:
+        net = PNet(input_image, label, bbox_target, landmark_target, training=True)
+    elif type(netconfig) is config.RNetConfig:
+        net = RNet(input_image, label, bbox_target, landmark_target, training=True)
+    elif type(netconfig) is config.ONetConfig:
+        net = None
+    else:
+        raise ValueError('incorrect type \'{}\' of the input net'.format(type(netconfig)))
+
+    # initialize total loss
     total_loss = radio_cls_loss * net.cls_loss + radio_bbox_loss * net.bbox_loss + radio_landmark_loss * net.landmark_loss + net.l2_loss
-    train_op, lr_op = train_model(lr, total_loss, config.number_of_iterations)
+    train_op, lr_op = train_model(lr, total_loss, netconfig.number_of_iterations)
 
-    # init
     init = tf.global_variables_initializer()
     sess = tf.Session()
 
@@ -157,10 +180,10 @@ def train(tfrecord, prefix, number_of_steps, display=100, lr=0.01, seed=None):
     sess.graph.finalize()
 
     # total steps
-    number_of_iterations = config.number_of_iterations * number_of_steps
+    number_of_iterations = netconfig.number_of_iterations * netconfig.number_of_epochs
 
     try:
-        for iter in range(number_of_iterations):
+        for it in range(number_of_iterations):
             if coord.should_stop():
                 break
             image_batch_array, label_batch_array, bbox_batch_array, landmark_batch_array = sess.run(tfdata)
@@ -174,29 +197,28 @@ def train(tfrecord, prefix, number_of_steps, display=100, lr=0.01, seed=None):
                                                                                label: label_batch_array,
                                                                                bbox_target: bbox_batch_array,
                                                                                landmark_target: landmark_batch_array})
-            final = (iter+1) == number_of_iterations
+            final = (it+1) == number_of_iterations
 
-            if (iter+1) % display == 0 or final:
+            if (it+1) % display == 0 or final:
                 fetches = (net.cls_loss, net.bbox_loss, net.landmark_loss, net.l2_loss, net.accuracy, total_loss, lr_op)
-                names = ('cls loss', 'bbox loss', 'landmark loss', 'l2 loss', 'accuracy', 'total loss', 'lr')
-
                 values = sess.run(fetches, feed_dict={input_image: image_batch_array,
                                                      label: label_batch_array,
                                                      bbox_target: bbox_batch_array,
                                                      landmark_target: landmark_batch_array})
 
-                info = '{}: step: {}/{}'.format(datetime.now(), iter + 1, number_of_iterations)
+                names = ('cls loss', 'bbox loss', 'landmark loss', 'l2 loss', 'accuracy', 'total loss', 'lr')
+                info = '{}: step: {}/{}'.format(datetime.now(), it + 1, number_of_iterations)
                 for name, value in zip(names, values):
                     info += ', {}: {:0.4f}'.format(name, value)
 
                 print(info)
 
             # save every step
-            if (iter+1) % (number_of_iterations/number_of_steps) == 0 or final:
-                step = int(number_of_steps*(iter+1)/number_of_iterations)
-                path_prefix = saver.save(sess, str(prefix), global_step=step)
-                print('path prefix is:', path_prefix, 'step', step, '/', number_of_steps)
-                writer.add_summary(summary, global_step=iter)
+            if (it+1) % (number_of_iterations / netconfig.number_of_epochs) == 0 or final:
+                epoch = int(netconfig.number_of_epochs * (it + 1) / number_of_iterations)
+                path_prefix = saver.save(sess, str(prefix), global_step=epoch)
+                print('path prefix is:', path_prefix, 'epoch', epoch, '/', netconfig.number_of_epochs)
+                writer.add_summary(summary, global_step=it)
 
     except tf.errors.OutOfRangeError:
         pass

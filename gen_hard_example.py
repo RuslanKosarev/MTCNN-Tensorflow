@@ -13,7 +13,7 @@ from Detection.detector import Detector
 from Detection.fcn_detector import FcnDetector
 from Detection.MtcnnDetector import MtcnnDetector
 from prepare_data.data_utils import *
-import mtcnn_config
+import config
 from prepare_data import h5utils
 from train_models import MTCNN_config
 from prepare_data import ioutils
@@ -205,13 +205,13 @@ if __name__ == '__main__':
     test_mode = 'PNet'
 
     if test_mode == 'PNet':
-        config = mtcnn_config.PNetConfig()
+        config = config.PNetConfig()
 
     if test_mode == 'RNet':
-        config = mtcnn_config.RNetConfig()
+        config = config.RNetConfig()
 
     if test_mode == 'ONet':
-        config = mtcnn_config.ONetConfig()
+        config = config.ONetConfig()
 
     # if net == "RNet":
     #     image_size = 24
