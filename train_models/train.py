@@ -203,9 +203,9 @@ def train(netconfig, tfrecord, prefix, display=100, lr=0.01, seed=None):
             if (it+1) % display == 0 or final:
                 fetches = (net.cls_loss, net.bbox_loss, net.landmark_loss, net.l2_loss, net.accuracy, total_loss, lr_op)
                 values = sess.run(fetches, feed_dict={input_image: image_batch_array,
-                                                     label: label_batch_array,
-                                                     bbox_target: bbox_batch_array,
-                                                     landmark_target: landmark_batch_array})
+                                                      label: label_batch_array,
+                                                      bbox_target: bbox_batch_array,
+                                                      landmark_target: landmark_batch_array})
 
                 names = ('cls loss', 'bbox loss', 'landmark loss', 'l2 loss', 'accuracy', 'total loss', 'lr')
                 info = '{}: iteration: {}/{}'.format(datetime.now(), it + 1, number_of_iterations)
