@@ -15,5 +15,5 @@ if __name__ == '__main__':
     start = datetime.now()
     h5file = outdir.joinpath(h5file)
     tfrecord = outdir.joinpath('dbtrain.tfrecord')
-    tfrecords.pnet_tfrecord(h5file, tfrecord, seed=seed)
+    tfrecords.tfrecords(h5file, tfrecord, seed=seed)
     print(datetime.now() - start)

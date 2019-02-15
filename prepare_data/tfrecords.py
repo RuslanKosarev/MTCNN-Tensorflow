@@ -45,11 +45,13 @@ def data2sample(inpdata):
     return outdata
 
 
-def pnet_tfrecord(h5file, tfrecord, seed=None):
+def tfrecords(h5file, tfrecord, keys=None, sizes=None, seed=None):
     """
 
-    :param tfrecord:
     :param h5file:
+    :param tfrecord:
+    :param keys:
+    :param sizes:
     :param seed:
     :return:
     """
@@ -60,16 +62,24 @@ def pnet_tfrecord(h5file, tfrecord, seed=None):
         os.remove(str(tfrecord))
 
     # get data from the h5 file
-    keys = ('positive', 'negative', 'part', 'landmark')
-    ratios = config.pnet_ratio
+    if keys is None:
+        keys = ('positive', 'negative', 'part', 'landmark')
+    if not isinstance(keys, (list, tuple)):
+        keys = (keys,)
+
+    if sizes is None:
+        sizes = [None]*len(keys)
 
     tfdata = []
 
-    for key, ratio in zip(keys, ratios):
+    for key, size in zip(keys, sizes):
         data = h5utils.read(h5file, key)
-        size = int(config.tfrecord_size*ratio/sum(ratios))
+
+        if size is None:
+            size = len(data)
         if size < len(data):
-            data = np.random.choice(data, size=int(size))
+            data = np.random.choice(data, size=size)
+
         tfdata += data2sample(data)
 
     np.random.shuffle(tfdata)

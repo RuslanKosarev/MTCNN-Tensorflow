@@ -6,11 +6,12 @@ import pathlib as plib
 import h5py
 import numpy as np
 
-dftdir = plib.Path(os.pardir).joinpath('data').absolute()
-
 lfwdtype = np.dtype([('path', h5py.special_dtype(vlen=str)), ('label', np.int8),
                      ('1', np.float), ('2', np.float), ('3', np.float), ('4', np.float), ('5', np.float),
                      ('6', np.float), ('7', np.float), ('8', np.float), ('9', np.float), ('10', np.float)])
+
+
+dftdir = plib.Path(os.pardir).joinpath('data').absolute()
 
 
 # ======================================================================================================================
