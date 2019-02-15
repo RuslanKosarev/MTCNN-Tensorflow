@@ -7,8 +7,9 @@ import numpy as np
 from prepare_data.utils import IoU, readlines
 from prepare_data.BBox_utils import read_bbox_data, BBox
 from prepare_data.Landmark_utils import rotate, flip
-from train_models import MTCNN_config
+# from train_models import MTCNN_config
 from prepare_data import h5utils
+from prepare_data import ioutils
 
 
 def widerdbase(dbase, seed=None):
@@ -187,30 +188,25 @@ def widerdbase(dbase, seed=None):
     h5utils.write(dbase.h5out, 'part', np.array(part, dtype=MTCNN_config.wider_dtype))
 
 
-def lfwdbase(dbase, argument=True, seed=None):
+def lfwdbase(dbase, netconfig, augment=True, seed=None):
     np.random.seed(seed=seed)
 
-    size = 12
-    image_id = 0
+    size = netconfig.image_size
 
     data = read_bbox_data(dbase.annotations)
 
     idx = 0
+    image_id = 0
     output = []
 
     # image_path bbox landmark(5*2)
     for (inpfile, bbox, landmarkGt) in data:
-        # print imgPath
+        img = ioutils.read_image(inpfile, prefix=dbase.inpdir)
+        img_h, img_w, img_c = img.shape
+
         f_imgs = []
         f_landmarks = []
-        # print(imgPath)
 
-        inpfile = dbase.inpdir.joinpath(inpfile)
-        img = cv2.imread(str(inpfile))
-        if img is None:
-            raise IOError('error to read image {}.'.format(inpfile))
-
-        img_h, img_w, img_c = img.shape
         gt_box = np.array([bbox.left, bbox.top, bbox.right, bbox.bottom])
         # get sub-image from bbox
         f_face = img[bbox.top:bbox.bottom + 1, bbox.left:bbox.right + 1]
@@ -224,18 +220,17 @@ def lfwdbase(dbase, argument=True, seed=None):
         # landmakrGt is a list of tuples
         for index, one in enumerate(landmarkGt):
             # (( x - bbox.left)/ width of bounding box, (y - bbox.top)/ height of bounding box
-            rv = ((one[0] - gt_box[0]) / (gt_box[2] - gt_box[0]), (one[1] - gt_box[1]) / (gt_box[3] - gt_box[1]))
-            # put the normalized value into the new list landmark
-            landmark[index] = rv
+            landmark[index] = ((one[0] - gt_box[0]) / (gt_box[2] - gt_box[0]),
+                               (one[1] - gt_box[1]) / (gt_box[3] - gt_box[1]))
 
         f_imgs.append(f_face)
         f_landmarks.append(landmark.reshape(10))
         landmark = np.zeros((5, 2))
 
-        if argument:
+        if augment:
             idx = idx + 1
             if idx % 100 == 0:
-                print('\r{} images done.'.format(idx), end='')
+                print('\r{} images have been processed'.format(idx), end='')
 
             x1, y1, x2, y2 = gt_box
             # gt's width
@@ -317,15 +312,14 @@ def lfwdbase(dbase, argument=True, seed=None):
                 if np.sum(np.where(f_landmarks[i] >= 1, 1, 0)) > 0:
                     continue
 
-                outfile = dbase.outdir.joinpath(dbase.keys[0], '{}.jpg'.format(image_id))
-                cv2.imwrite(str(outfile), f_imgs[i])
-
-                output.append(tuple([os.path.join(outfile.parent.name, outfile.name), -2] + f_landmarks[i].tolist()))
+                key = os.path.join(dbase.keys[0], '{}.jpg'.format(image_id))
+                ioutils.write_image(f_imgs[i], key, prefix=dbase.outdir)
+                output.append(tuple([key, -2] + f_landmarks[i].tolist()))
 
                 image_id += 1
 
     print('\n')
-    h5utils.write(dbase.h5file, dbase.keys[0], np.array(output, dtype=MTCNN_config.lfw_dtype))
+    h5utils.write(dbase.h5file, dbase.keys[0], np.array(output, dtype=dbase.dtype))
 
 
 def merge(h5out, wider, lfw):
