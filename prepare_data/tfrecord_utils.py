@@ -1,8 +1,9 @@
 #coding:utf-8
+
 import tensorflow as tf
 import os
 import cv2
-from PIL import Image
+from prepare_data import ioutils
 
 
 def _int64_feature(value):
@@ -62,7 +63,7 @@ def _convert_to_example(image_example, image_buffer, colorspace=b'RGB', channels
         'image/image_bbox/ymax': _float_feature(ymax),
     }))
     return example
-def _convert_to_example_simple(image_example, image_buffer):
+def convert_to_example_simple(image_example, image_buffer):
     """
     covert to tfrecord file
     :param image_example: dict, an image example
@@ -178,15 +179,12 @@ def _process_image(filename, coder):
 
 
 def process_image_without_coder(filename):
-    image = cv2.imread(str(filename))
-    if image is None:
-        raise IOError('an error occurred while reading the file {}'.format(filename))
+    image = ioutils.read_image(str(filename))
 
-    image_data = image.tostring()
-    assert len(image.shape) == 3
     height = image.shape[0]
     width = image.shape[1]
-    assert image.shape[2] == 3
+
+    image_data = image.tostring()
 
     return image_data, height, width
 

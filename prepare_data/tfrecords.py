@@ -2,17 +2,15 @@
 __author__ = 'Ruslan N. Kosarev'
 
 import os
-import sys
 import numpy as np
 import tensorflow as tf
-from prepare_data.tfrecord_utils import process_image_without_coder, _convert_to_example_simple
+from prepare_data.tfrecord_utils import process_image_without_coder, convert_to_example_simple
 from prepare_data import h5utils
-from train_models.MTCNN_config import config
 
 
 def add_to_tfrecord(writer, filename, data):
     image_data, height, width = process_image_without_coder(filename)
-    example = _convert_to_example_simple(data, image_data)
+    example = convert_to_example_simple(data, image_data)
     writer.write(example.SerializeToString())
 
 

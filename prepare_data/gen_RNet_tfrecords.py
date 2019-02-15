@@ -6,7 +6,7 @@ import time
 
 import tensorflow as tf
 
-from prepare_data.tfrecord_utils import _process_image_withoutcoder, _convert_to_example_simple
+from prepare_data.tfrecord_utils import _process_image_withoutcoder, convert_to_example_simple
 
 
 def _add_to_tfrecord(filename, image_example, tfrecord_writer):
@@ -23,7 +23,7 @@ def _add_to_tfrecord(filename, image_example, tfrecord_writer):
     #width:original image's width
     #image_example dict contains image's info
     image_data, height, width = _process_image_withoutcoder(filename)
-    example = _convert_to_example_simple(image_example, image_data)
+    example = convert_to_example_simple(image_example, image_data)
     tfrecord_writer.write(example.SerializeToString())
 
 
