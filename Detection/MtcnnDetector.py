@@ -410,11 +410,12 @@ class MtcnnDetector(object):
         empty_array = np.array([])
         # test_data is iter_
         start_time = time.time()
+        print('number of images', num_of_img)
 
         for databatch in test_data:
             batch_idx += 1
             if batch_idx % 100 == 0:
-                print("%d out of %d images done" % (batch_idx, test_data.size))
+                # print("%d out of %d images done" % (batch_idx, test_data.size))
                 print((time.time() - start_time)/100, 'seconds for each image')
                 start_time = time.time()
 
