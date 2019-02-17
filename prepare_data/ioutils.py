@@ -42,7 +42,7 @@ class ImageLoader:
 
         if self.counter < self.size:
             if self.counter % self.display == 0:
-                elapsed_time = (time.time() - self.start_time) / 100
+                elapsed_time = (time.time() - self.start_time) / self.display
                 print('\rnumber of processed images {}/{}, {:.5f} seconds per image'.
                       format(self.counter, self.size, elapsed_time), end='')
                 self.start_time = time.time()
