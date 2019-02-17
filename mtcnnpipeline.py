@@ -3,7 +3,7 @@ __author__ = 'Ruslan N. Kosarev'
 
 import os
 import pathlib as plib
-from prepare_data import wider, lfw
+from prepare_data import wider, lfw, tfrecords
 from prepare_data.genexamples import generate
 
 
@@ -11,22 +11,23 @@ from prepare_data.genexamples import generate
 basedir = plib.Path(os.pardir).joinpath('dbase').absolute()
 
 
-class PNetData:
-    def __init__(self, basedir, path='PNet'):
-        self.output = basedir.joinpath(path).absolute()
-        self.h5file = self.output.joinpath('dbtrain.h5')
+class NetData:
+    def __init__(self, basedir, dirname='PNet', label='pnet'):
+        self.output = basedir.joinpath(dirname).absolute()
+        self.h5file = self.output.joinpath(label + '.h5')
+        self.tfrecord = self.output.joinpath(label)
 
 
-class RNetData:
-    def __init__(self, basedir, path='RNet'):
-        self.path = basedir.joinpath(path).absolute()
-        self.h5file = self.path.joinpath('dbtrain.h5')
-
-
-class ONetData:
-    def __init__(self, basedir, path='ONet'):
-        self.path = basedir.joinpath(path).absolute()
-        self.h5file = self.path.joinpath('dbtrain.h5')
+# class RNetData:
+#     def __init__(self, basedir, path='RNet'):
+#         self.path = basedir.joinpath(path).absolute()
+#         self.h5file = self.path.joinpath('dbtrain.h5')
+#
+#
+# class ONetData:
+#     def __init__(self, basedir, path='ONet'):
+#         self.path = basedir.joinpath(path).absolute()
+#         self.h5file = self.path.joinpath('dbtrain.h5')
 
 
 class Models:
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     dblfw = lfw.DBLFW(basedir.joinpath('lfw'))
 
     # config for output data
-    dbpnet = PNetData(basedir)
+    dbpnet = NetData(basedir, dirname='PNet', label='dbpnet')
 
     # ------------------------------------------------------------------------------------------------------------------
     # train PNet
@@ -54,6 +55,12 @@ if __name__ == '__main__':
     # prepare train data
     wider.prepare(dbwider, dbpnet, seed=seed)
     lfw.prepare(dblfw, dbpnet, image_size=12, seed=seed)
+
+    # save tfrecord files
+    labels = ('positive', 'negative', 'part', 'landmark')
+    tfrecords.write_multi_tfrecords(dbpnet.h5file, dbpnet.tfrecord, labels, seed=None)
+
+
 
 
     # exit(0)

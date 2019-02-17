@@ -43,11 +43,11 @@ def data2sample(inpdata):
     return outdata
 
 
-def tfrecords(h5file, tfrecord, keys=None, sizes=None, seed=None):
+def write(h5file, tffile, keys=None, sizes=None, seed=None):
     """
 
     :param h5file:
-    :param tfrecord:
+    :param tffile:
     :param keys:
     :param sizes:
     :param seed:
@@ -56,8 +56,8 @@ def tfrecords(h5file, tfrecord, keys=None, sizes=None, seed=None):
     np.random.seed(seed=seed)
 
     # tf record file name
-    if tfrecord.exists():
-        os.remove(str(tfrecord))
+    if tffile.exists():
+        os.remove(str(tffile))
 
     # get data from the h5 file
     if keys is None:
@@ -82,7 +82,7 @@ def tfrecords(h5file, tfrecord, keys=None, sizes=None, seed=None):
 
     np.random.shuffle(tfdata)
 
-    with tf.python_io.TFRecordWriter(str(tfrecord)) as writer:
+    with tf.python_io.TFRecordWriter(str(tffile)) as writer:
         for i, sample in enumerate(tfdata):
             filename = h5file.parent.joinpath(sample['filename'])
             add_to_tfrecord(writer, filename, sample)
@@ -90,6 +90,12 @@ def tfrecords(h5file, tfrecord, keys=None, sizes=None, seed=None):
             if (i+1) % 100 == 0:
                 print('\r{}/{} samples have been added to tfrecord file.'.format(i+1, len(tfdata)), end='')
 
-    print('\rtfrecord file {} has been written, batch size is {}.'.format(tfrecord, len(tfdata)))
+    print('\rtfrecord file {} has been written, batch size is {}.'.format(tffile, len(tfdata)))
 
+
+def write_multi_tfrecords(h5file, prefix, labels, seed=None):
+
+    for label in labels:
+        tffile = prefix.with_name(prefix.name + label).with_suffix('.tfrecord')
+        write(h5file, tffile, keys=label, sizes=None, seed=seed)
 
