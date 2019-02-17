@@ -68,7 +68,7 @@ class RNetConfig:
     image_size = 24
     number_of_epochs = 30
     number_of_iterations = 10000
-    lr = 0.001
+    lr = 0.01
     batch_size = batch_size
 
 
@@ -77,5 +77,5 @@ class ONetConfig:
     image_size = 48
     number_of_epochs = 30
     number_of_iterations = 10000
-    lr = 0.001
+    lr = 0.01
     batch_size = batch_size

@@ -3,27 +3,18 @@ __author__ = 'Ruslan N. Kosarev'
 
 import os
 import pathlib as plib
+from prepare_data import wider, lfw
 from prepare_data.genexamples import generate
-from prepare_data import dbwider
 
 
 # default directory to save train data
 basedir = plib.Path(os.pardir).joinpath('dbase').absolute()
 
 
-class Models:
-    epochs = (10, 30, 30)
-    batch_size = (2048, 256, 16)
-    dir = plib.Path(os.pardir).joinpath('mtcnn').absolute()
-    path = (dir.joinpath('PNet', 'PNet'),
-            dir.joinpath('RNet', 'RNet'),
-            dir.joinpath('ONet', 'ONet'))
-
-
 class PNetData:
     def __init__(self, basedir, path='PNet'):
-        self.path = basedir.joinpath(path).absolute()
-        self.h5file = self.path.joinpath('dbtrain.h5')
+        self.output = basedir.joinpath(path).absolute()
+        self.h5file = self.output.joinpath('dbtrain.h5')
 
 
 class RNetData:
@@ -38,14 +29,32 @@ class ONetData:
         self.h5file = self.path.joinpath('dbtrain.h5')
 
 
+class Models:
+    epochs = (10, 30, 30)
+    batch_size = (2048, 256, 16)
+    dir = plib.Path(os.pardir).joinpath('mtcnn').absolute()
+    path = (dir.joinpath('PNet', 'PNet'),
+            dir.joinpath('RNet', 'RNet'),
+            dir.joinpath('ONet', 'ONet'))
+
+
 if __name__ == '__main__':
-    seed = 0
+    seed = None
+
+    # config for input wider and lfw data
+    dbwider = wider.DBWider(basedir.joinpath('WIDER_train'))
+    dblfw = lfw.DBLFW(basedir.joinpath('lfw'))
+
+    # config for output data
+    dbpnet = PNetData(basedir)
 
     # ------------------------------------------------------------------------------------------------------------------
     # train PNet
-    dbwider.prepare(dbwider.DBWider(basedir.joinpath('WIDER_train')),  # config for input wider data
-                    PNetData(basedir),                                 # config for output data
-                    seed=seed)
+
+    # prepare train data
+    wider.prepare(dbwider, dbpnet, seed=seed)
+    lfw.prepare(dblfw, dbpnet, image_size=12, seed=seed)
+
 
     # exit(0)
     # ------------------------------------------------------------------------------------------------------------------
