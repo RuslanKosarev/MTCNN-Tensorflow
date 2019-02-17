@@ -2,17 +2,17 @@ import tensorflow as tf
 import numpy as np
 
 
-class Detector(object):
-    #net_factory:rnet or onet
-    #datasize:24 or 48
+class Detector:
     def __init__(self, net_factory, data_size, batch_size, model_path):
         graph = tf.Graph()
         with graph.as_default():
             self.image_op = tf.placeholder(tf.float32, shape=[batch_size, data_size, data_size, 3], name='input_image')
-            #figure out landmark            
-            self.cls_prob, self.bbox_pred, self.landmark_pred = net_factory(self.image_op, training=False)
-            self.sess = tf.Session(
-                config=tf.ConfigProto(allow_soft_placement=True, gpu_options=tf.GPUOptions(allow_growth=True)))
+            net = net_factory(self.image_op, training=False)
+            self.cls_prob = net.cls_prob
+            self.bbox_pred = net.bbox_pred
+            self.landmark_pred = net.landmark_pred
+            self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,
+                                                         gpu_options=tf.GPUOptions(allow_growth=True)))
             saver = tf.train.Saver()
             #check whether the dictionary is valid
             model_dict = '/'.join(model_path.split('/')[:-1])
