@@ -4,16 +4,11 @@ __author__ = 'Ruslan N. Kosarev'
 import os
 import pathlib as plib
 from prepare_data.genexamples import generate
+from prepare_data import dbwider
 
 
-# default directory for train data
-dbdir = plib.Path(os.pardir).joinpath('data').absolute()
-
-
-class DBWider:
-    dir = dbdir.joinpath('WIDER_train', 'images')
-    wider_face_train = dir.parent.joinpath('wider_face_train.txt')
-    wider_face_train_bbx_gt = dir.parent.joinpath('wider_face_train_bbx_gt.txt')
+# default directory to save train data
+basedir = plib.Path(os.pardir).joinpath('dbase').absolute()
 
 
 class Models:
@@ -25,28 +20,51 @@ class Models:
             dir.joinpath('ONet', 'ONet'))
 
 
+class PNetData:
+    def __init__(self, basedir, path='PNet'):
+        self.path = basedir.joinpath(path).absolute()
+        self.h5file = self.path.joinpath('dbtrain.h5')
+
+
+class RNetData:
+    def __init__(self, basedir, path='RNet'):
+        self.path = basedir.joinpath(path).absolute()
+        self.h5file = self.path.joinpath('dbtrain.h5')
+
+
+class ONetData:
+    def __init__(self, basedir, path='ONet'):
+        self.path = basedir.joinpath(path).absolute()
+        self.h5file = self.path.joinpath('dbtrain.h5')
+
+
 if __name__ == '__main__':
-    seed = None
+    seed = 0
 
+    # ------------------------------------------------------------------------------------------------------------------
     # train PNet
+    dbwider.prepare(dbwider.DBWider(basedir.joinpath('WIDER_train')),  # config for input wider data
+                    PNetData(basedir),                                 # config for output data
+                    seed=seed)
 
+    # exit(0)
     # ------------------------------------------------------------------------------------------------------------------
     # train O-Net (output net)
 
-    # prepare examples
-    threshold = (0.3, 0.1, 0.7)
-    min_face_size = 20
-    stride = 2
-
-    h5file = dbdir.joinpath('onet', 'trainonet.h5')
-
-    generate(h5file,
-             DBWider(),
-             Models(),
-             mode='RNet',
-             threshold=threshold,
-             min_face_size=min_face_size,
-             stride=stride,
-             slide_window=False)
-
-
+    # # prepare examples
+    # threshold = (0.3, 0.1, 0.7)
+    # min_face_size = 20
+    # stride = 2
+    #
+    # h5file = dbdir.joinpath('onet', 'trainonet.h5')
+    #
+    # generate(h5file,
+    #          DBWider(),
+    #          Models(),
+    #          mode='RNet',
+    #          threshold=threshold,
+    #          min_face_size=min_face_size,
+    #          stride=stride,
+    #          slide_window=False)
+    #
+    #
