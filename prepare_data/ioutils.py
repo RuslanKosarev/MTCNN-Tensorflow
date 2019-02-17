@@ -11,7 +11,7 @@ def write_image(image, filename, prefix=None):
         filename = os.path.join(str(prefix), str(filename))
 
     if not cv2.imwrite(str(filename), image):
-        raise IOError('while writing the file {}.'.format(filename))
+        raise IOError('while writing the file {}'.format(filename))
 
 
 def read_image(filename, prefix=None):
@@ -21,7 +21,7 @@ def read_image(filename, prefix=None):
         image = cv2.imread(str(filename))
 
     if image is None:
-        raise IOError('while reading the file {}.'.format(filename))
+        raise IOError('while reading the file {}'.format(filename))
     return image
 
 
@@ -43,7 +43,7 @@ class ImageLoader:
         if self.counter < self.size:
             if self.counter % self.display == 0:
                 elapsed_time = (time.time() - self.start_time) / 100
-                print('\rnumber of processed images {}/{}, {} seconds for each image'.
+                print('\rnumber of processed images {}/{}, {:.5f} seconds per image'.
                       format(self.counter, self.size, elapsed_time), end='')
                 self.start_time = time.time()
 
