@@ -56,9 +56,10 @@ if __name__ == '__main__':
 
     # train
     train(pnet, tfprefix=pnet.dbase.tfprefix, prefix=pnet.prefix)
-    exit(0)
+
     # ------------------------------------------------------------------------------------------------------------------
     # train R-Net (refinement net)
+    exit(0)
 
     # prepare pnet examples
     # threshold = (0.3, 0.1, 0.7)
