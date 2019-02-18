@@ -6,6 +6,7 @@ import tensorflow as tf
 from datetime import datetime
 from tensorboard.plugins import projector
 from prepare_data.read_tfrecords import read_multi_tfrecords
+from prepare_data import tfrecords
 
 
 def train_model(base_lr, loss, iterations):
@@ -87,11 +88,11 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train(config, tfrecord, prefix, display=100, seed=None):
+def train(config, tfprefix, prefix, display=100, seed=None):
     """
 
     :param config:
-    :param tfrecord:
+    :param tfrecords:
     :param prefix:
     :param display:
     :param seed:
@@ -120,7 +121,11 @@ def train(config, tfrecord, prefix, display=100, seed=None):
 
     batch_sizes = [pos_batch_size, part_batch_size, neg_batch_size, landmark_batch_size]
     batch_size = sum(batch_sizes)
-    tfdata = read_multi_tfrecords(config, tfrecord, batch_sizes)
+
+    files = []
+    for key in ('positive', 'part', 'negative', 'landmark'):
+        files.append(tfrecords.getfilename(tfprefix, key))
+    tfdata = read_multi_tfrecords(config, files, batch_sizes)
 
     # define placeholder
     input_image = tf.placeholder(tf.float32, shape=[batch_size, image_size, image_size, 3], name='input_image')
