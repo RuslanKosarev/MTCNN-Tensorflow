@@ -94,10 +94,10 @@ def write(h5file, tffile, keys=None, sizes=None, seed=None):
             if (i+1) % 100 == 0:
                 print('\r{}/{} samples have been added to tfrecord file.'.format(i+1, len(tfdata)), end='')
 
-    print('\rtfrecord file {} has been written, batch size is {}.'.format(tffile, len(tfdata)))
+    print('\rtfrecord file {} has been written, number of samples is {}.'.format(tffile, len(tfdata)))
 
 
-def write_multi_tfrecords(h5file, prefix, seed=None):
+def write_multi_tfrecords(h5file, prefix=None, seed=None):
 
     keys = h5utils.keys(h5file)
     files = []
