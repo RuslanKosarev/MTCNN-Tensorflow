@@ -45,8 +45,8 @@ if __name__ == '__main__':
     # train PNet
 
     # prepare train data
-    wider.prepare(dbwider, dbpnet, image_size=pnet.Config.image_size, seed=seed)
-    lfw.prepare(dblfw, dbpnet, image_size=pnet.Config.image_size, seed=seed)
+    wider.prepare(dbwider, dbpnet, image_size=pnet.Config().image_size, seed=seed)
+    lfw.prepare(dblfw, dbpnet, image_size=pnet.Config().image_size, seed=seed)
 
     # save tf record files
     labels = ('positive', 'part', 'negative', 'landmark')
