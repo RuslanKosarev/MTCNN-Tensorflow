@@ -4,7 +4,7 @@ __author__ = 'Ruslan N. Kosarev'
 from train_models.mtcnn_model import *
 
 
-# config to train P-Net (prediction net)
+# config to train R-Net (prediction net)
 class Config:
     image_size = 24
     number_of_epochs = 30
