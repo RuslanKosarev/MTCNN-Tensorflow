@@ -8,6 +8,10 @@ from prepare_data.tfrecord_utils import process_image_without_coder, convert_to_
 from prepare_data import h5utils
 
 
+def getfilename(prefix, labels):
+    return [prefix.with_name(prefix.name + label).with_suffix('.tfrecord') for label in labels]
+
+
 def add_to_tfrecord(writer, filename, data):
     image_data, height, width = process_image_without_coder(filename)
     example = convert_to_example_simple(data, image_data)
