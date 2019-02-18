@@ -8,8 +8,8 @@ from prepare_data.tfrecord_utils import process_image_without_coder, convert_to_
 from prepare_data import h5utils
 
 
-def getfilename(prefix, labels):
-    return [prefix.with_name(prefix.name + label).with_suffix('.tfrecord') for label in labels]
+def getfilename(prefix, key):
+    return prefix.with_name(prefix.name + key).with_suffix('.tfrecord')
 
 
 def add_to_tfrecord(writer, filename, data):
