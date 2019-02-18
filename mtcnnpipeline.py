@@ -3,30 +3,23 @@ __author__ = 'Ruslan N. Kosarev'
 
 import os
 import pathlib as plib
-from prepare_data import wider, lfw, tfrecords
-from prepare_data.genexamples import generate
-from train_models import pnet, rnet, onet
+from prepare_data import wider, lfw, tfrecords, examples
+from train_models import PNet, RNet, ONet
 from train_models.train import train
 
 
 # default directory to save train data
 basedir = plib.Path(os.pardir).joinpath('dbase').absolute()
 
+# default directory to save trained nets
+netdir = plib.Path(os.pardir).joinpath('mtcnn').absolute()
+
 
 class DBNet:
     def __init__(self, basedir, dirname='PNet', label='pnet'):
         self.output = basedir.joinpath(dirname).absolute()
         self.h5file = self.output.joinpath(label + '.h5')
-        self.tfrecord = self.output.joinpath(label)
-
-
-class Models:
-    epochs = (10, 30, 30)
-    batch_size = (2048, 256, 16)
-    dir = plib.Path(os.pardir).joinpath('mtcnn').absolute()
-    path = (dir.joinpath('PNet', 'PNet'),
-            dir.joinpath('RNet', 'RNet'),
-            dir.joinpath('ONet', 'ONet'))
+        self.tfprefix = self.output.joinpath(label)
 
 
 if __name__ == '__main__':
@@ -36,45 +29,41 @@ if __name__ == '__main__':
     dbwider = wider.DBWider(basedir.joinpath('WIDER_train'))
     dblfw = lfw.DBLFW(basedir.joinpath('lfw'))
 
-    # config for output data
-    dbpnet = DBNet(basedir, dirname='PNet', label='dbpnet')
-    dbrnet = DBNet(basedir, dirname='PNet', label='dbpnet')
-    dbonet = DBNet(basedir, dirname='PNet', label='dbpnet')
+    # initialize config for datasets and nets
+    pnet = PNet.Config()
+    pnet.dbase = DBNet(basedir, dirname='PNet', label='pnet')
+    pnet.prefix = netdir.joinpath('PNet', 'pnet')
+
+    rnet = RNet.Config()
+    rnet.dbase = DBNet(basedir, dirname='RNet', label='rnet')
+    rnet.prefix = netdir.joinpath('RNet', 'rnet')
+
+    onet = ONet.Config()
+    onet.dbase = DBNet(basedir, dirname='ONet', label='onet')
+    onet.prefix = netdir.joinpath('ONet', 'onet')
+
+    config = (pnet, rnet, onet)
 
     # ------------------------------------------------------------------------------------------------------------------
-    # train PNet
+    # train P-Net (prediction net)
 
     # prepare train data
-    wider.prepare(dbwider, dbpnet, image_size=pnet.Config().image_size, seed=seed)
-    lfw.prepare(dblfw, dbpnet, image_size=pnet.Config().image_size, seed=seed)
+    # wider.prepare(dbwider, pnet.dbase, image_size=pnet.image_size, seed=seed)
+    # lfw.prepare(dblfw, pnet.dbase, image_size=pnet.image_size, seed=seed)
 
     # save tf record files
-    labels = ('positive', 'part', 'negative', 'landmark')
-    tfrecords.write_multi_tfrecords(dbpnet.h5file, dbpnet.tfrecord, labels, seed=None)
+    # tffiles = tfrecords.write_multi_tfrecords(pnet.dbase.h5file, prefix=pnet.dbase.tfprefix, seed=seed)
 
     # train
-    prefix = plib.Path(os.pardir).joinpath('mtcnn', 'PNet', 'pnet').absolute()
-    tffiles = tfrecords.getfilename(dbpnet.tfrecord, labels)
-    train(pnet.Config(), tffiles, prefix)
-
-    # exit(0)
+    train(pnet, tfprefix=pnet.dbase.tfprefix, prefix=pnet.prefix)
+    exit(0)
     # ------------------------------------------------------------------------------------------------------------------
-    # train O-Net (output net)
+    # train R-Net (refinement net)
 
-    # # prepare examples
+    # prepare pnet examples
     # threshold = (0.3, 0.1, 0.7)
     # min_face_size = 20
     # stride = 2
     #
-    # h5file = dbdir.joinpath('onet', 'trainonet.h5')
-    #
-    # generate(h5file,
-    #          DBWider(),
-    #          Models(),
-    #          mode='RNet',
-    #          threshold=threshold,
-    #          min_face_size=min_face_size,
-    #          stride=stride,
-    #          slide_window=False)
-    #
-    #
+    thresholds = (0.3, 0.1, 0.7)
+    examples.generate(dbwider, dbrnet, models, threshold=(0.3, 0.1, 0.7), min_face_size=20, stride=2)
