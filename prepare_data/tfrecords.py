@@ -47,13 +47,13 @@ def data2sample(inpdata):
     return outdata
 
 
-def write(h5file, tffile, keys=None, sizes=None, seed=None):
+def write_single_tfrecord(h5file, tffile, key=None, size=None, seed=None):
     """
 
     :param h5file:
     :param tffile:
-    :param keys:
-    :param sizes:
+    :param key:
+    :param size:
     :param seed:
     :return:
     """
@@ -64,25 +64,14 @@ def write(h5file, tffile, keys=None, sizes=None, seed=None):
         os.remove(str(tffile))
 
     # get data from the h5 file
-    if keys is None:
-        keys = ('positive', 'negative', 'part', 'landmark')
-    if not isinstance(keys, (list, tuple)):
-        keys = (keys,)
+    data = h5utils.read(h5file, key)
 
-    if sizes is None:
-        sizes = [None]*len(keys)
+    if size is None:
+        size = len(data)
+    if size < len(data):
+        data = np.random.choice(data, size=size)
 
-    tfdata = []
-
-    for key, size in zip(keys, sizes):
-        data = h5utils.read(h5file, key)
-
-        if size is None:
-            size = len(data)
-        if size < len(data):
-            data = np.random.choice(data, size=size)
-
-        tfdata += data2sample(data)
+    tfdata = data2sample(data)
 
     np.random.shuffle(tfdata)
 
@@ -103,9 +92,9 @@ def write_multi_tfrecords(h5file, prefix=None, seed=None):
     files = []
 
     for key in keys:
-        tffile = prefix.with_name(prefix.name + key).with_suffix('.tfrecord')
-        write(h5file, tffile, keys=key, sizes=None, seed=seed)
-        files.append(tffile)
+        filename = getfilename(prefix, key)
+        write_single_tfrecord(h5file, filename, key=key, seed=seed)
+        files.append(filename)
 
     return files
 
