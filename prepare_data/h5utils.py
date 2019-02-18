@@ -1,12 +1,8 @@
 # coding:utf-8
 __author__ = 'Ruslan N. Kosarev'
 
-import h5py
-from datetime import datetime
-import numpy as np
-import imageio
-import pathlib as plib
 import os
+import h5py
 
 
 def write_image(hf, name, image, mode='a', check_name=True):
@@ -44,3 +40,8 @@ def write(filename, name, data, mode='a'):
 def read(filename, name):
     with h5py.File(str(filename), mode='r') as hf:
         return hf[name][...]
+
+
+def keys(h5file):
+    with h5py.File(h5file) as f:
+        return list(f.keys())
