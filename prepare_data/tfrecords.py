@@ -97,9 +97,15 @@ def write(h5file, tffile, keys=None, sizes=None, seed=None):
     print('\rtfrecord file {} has been written, batch size is {}.'.format(tffile, len(tfdata)))
 
 
-def write_multi_tfrecords(h5file, prefix, labels, seed=None):
+def write_multi_tfrecords(h5file, prefix, seed=None):
 
-    for label in labels:
-        tffile = prefix.with_name(prefix.name + label).with_suffix('.tfrecord')
-        write(h5file, tffile, keys=label, sizes=None, seed=seed)
+    keys = h5utils.keys(h5file)
+    files = []
+
+    for key in keys:
+        tffile = prefix.with_name(prefix.name + key).with_suffix('.tfrecord')
+        write(h5file, tffile, keys=key, sizes=None, seed=seed)
+        files.append(tffile)
+
+    return files
 
