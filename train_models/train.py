@@ -1,16 +1,11 @@
 # coding:utf-8
-import os
-import sys
-from datetime import datetime
 
 import numpy as np
 import cv2
 import tensorflow as tf
-
+from datetime import datetime
 from tensorboard.plugins import projector
-from prepare_data.read_tfrecords import read_multi_tfrecords, read_single_tfrecord
-from train_models.mtcnn_model import PNet, RNet
-import config
+from prepare_data.read_tfrecords import read_multi_tfrecords
 
 
 def train_model(base_lr, loss, iterations):
@@ -92,10 +87,10 @@ def image_color_distort(inputs):
     return inputs
 
 
-def train(netconfig, tfrecord, prefix, display=100, seed=None):
+def train(config, tfrecord, prefix, display=100, seed=None):
     """
 
-    :param netconfig:
+    :param config:
     :param tfrecord:
     :param prefix:
     :param display:
@@ -104,33 +99,28 @@ def train(netconfig, tfrecord, prefix, display=100, seed=None):
     """
     np.random.seed(seed=seed)
 
+    if not prefix.parent.exists():
+        prefix.parent.mkdir(parent=True)
+
     logdir = prefix.parent.joinpath('logs')
     if not logdir.exists():
         logdir.mkdir()
 
-    image_size = netconfig.image_size
+    image_size = config.image_size
     radio_cls_loss = 1.0
     radio_bbox_loss = 0.5
     radio_landmark_loss = 0.5
 
-    batch_size = netconfig.batch_size
+    batch_size = config.batch_size
 
-    if type(netconfig) is config.PNetConfig:
-        tfdata = read_single_tfrecord(netconfig, tfrecord, batch_size)
-    else:
-        pos_radio = 1/6
-        part_radio = 1/6
-        landmark_radio = 1/6
-        neg_radio = 1/2
+    pos_batch_size = int(batch_size*config.pos_ratio)
+    part_batch_size = int(batch_size*config.part_ratio)
+    neg_batch_size = int(batch_size*config.neg_ratio)
+    landmark_batch_size = int(batch_size*config.landmark_ratio)
 
-        pos_batch_size = int(batch_size*pos_radio)
-        part_batch_size = int(batch_size*part_radio)
-        neg_batch_size = int(batch_size*neg_radio)
-        landmark_batch_size = int(batch_size*landmark_radio)
-
-        batch_sizes = [pos_batch_size, part_batch_size, neg_batch_size, landmark_batch_size]
-        batch_size = sum(batch_sizes)
-        tfdata = read_multi_tfrecords(netconfig, tfrecord, batch_sizes)
+    batch_sizes = [pos_batch_size, part_batch_size, neg_batch_size, landmark_batch_size]
+    batch_size = sum(batch_sizes)
+    tfdata = read_multi_tfrecords(config, tfrecord, batch_sizes)
 
     # define placeholder
     input_image = tf.placeholder(tf.float32, shape=[batch_size, image_size, image_size, 3], name='input_image')
@@ -138,21 +128,13 @@ def train(netconfig, tfrecord, prefix, display=100, seed=None):
     bbox_target = tf.placeholder(tf.float32, shape=[batch_size, 4], name='bbox_target')
     landmark_target = tf.placeholder(tf.float32, shape=[batch_size, 10], name='landmark_target')
 
-    # get loss and accuracy
     input_image = image_color_distort(input_image)
 
-    if type(netconfig) is config.PNetConfig:
-        net = PNet(input_image, label, bbox_target, landmark_target, training=True)
-    elif type(netconfig) is config.RNetConfig:
-        net = RNet(input_image, label, bbox_target, landmark_target, training=True)
-    elif type(netconfig) is config.ONetConfig:
-        net = None
-    else:
-        raise ValueError('incorrect type \'{}\' of the input net'.format(type(netconfig)))
+    net = config.factory(input_image, label, bbox_target, landmark_target, training=True)
 
     # initialize total loss
     total_loss = radio_cls_loss * net.cls_loss + radio_bbox_loss * net.bbox_loss + radio_landmark_loss * net.landmark_loss + net.l2_loss
-    train_op, lr_op = train_model(netconfig.lr, total_loss, netconfig.number_of_iterations)
+    train_op, lr_op = train_model(config.lr, total_loss, config.number_of_iterations)
 
     init = tf.global_variables_initializer()
     sess = tf.Session()
@@ -180,7 +162,7 @@ def train(netconfig, tfrecord, prefix, display=100, seed=None):
     sess.graph.finalize()
 
     # total steps
-    number_of_iterations = netconfig.number_of_iterations * netconfig.number_of_epochs
+    number_of_iterations = config.number_of_iterations * config.number_of_epochs
 
     try:
         for it in range(number_of_iterations):
@@ -214,10 +196,10 @@ def train(netconfig, tfrecord, prefix, display=100, seed=None):
                 print(info)
 
             # save every step
-            if (it+1) % (number_of_iterations / netconfig.number_of_epochs) == 0 or final:
-                epoch = int(netconfig.number_of_epochs * (it + 1) / number_of_iterations)
+            if (it+1) % (number_of_iterations / config.number_of_epochs) == 0 or final:
+                epoch = int(config.number_of_epochs * (it + 1) / number_of_iterations)
                 path_prefix = saver.save(sess, str(prefix), global_step=epoch)
-                print('path prefix is:', path_prefix, 'epoch', epoch, '/', netconfig.number_of_epochs)
+                print('path prefix is:', path_prefix, 'epoch', epoch, '/', config.number_of_epochs)
                 writer.add_summary(summary, global_step=it)
 
     except tf.errors.OutOfRangeError:

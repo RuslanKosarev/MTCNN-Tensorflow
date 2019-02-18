@@ -5,29 +5,19 @@ import os
 import pathlib as plib
 from prepare_data import wider, lfw, tfrecords
 from prepare_data.genexamples import generate
+from train_models import pnet, rnet, onet
+from train_models.train import train
 
 
 # default directory to save train data
 basedir = plib.Path(os.pardir).joinpath('dbase').absolute()
 
 
-class NetData:
+class DBNet:
     def __init__(self, basedir, dirname='PNet', label='pnet'):
         self.output = basedir.joinpath(dirname).absolute()
         self.h5file = self.output.joinpath(label + '.h5')
         self.tfrecord = self.output.joinpath(label)
-
-
-# class RNetData:
-#     def __init__(self, basedir, path='RNet'):
-#         self.path = basedir.joinpath(path).absolute()
-#         self.h5file = self.path.joinpath('dbtrain.h5')
-#
-#
-# class ONetData:
-#     def __init__(self, basedir, path='ONet'):
-#         self.path = basedir.joinpath(path).absolute()
-#         self.h5file = self.path.joinpath('dbtrain.h5')
 
 
 class Models:
@@ -47,21 +37,25 @@ if __name__ == '__main__':
     dblfw = lfw.DBLFW(basedir.joinpath('lfw'))
 
     # config for output data
-    dbpnet = NetData(basedir, dirname='PNet', label='dbpnet')
+    dbpnet = DBNet(basedir, dirname='PNet', label='dbpnet')
+    dbrnet = DBNet(basedir, dirname='PNet', label='dbpnet')
+    dbonet = DBNet(basedir, dirname='PNet', label='dbpnet')
 
     # ------------------------------------------------------------------------------------------------------------------
     # train PNet
 
     # prepare train data
-    wider.prepare(dbwider, dbpnet, seed=seed)
-    lfw.prepare(dblfw, dbpnet, image_size=12, seed=seed)
+    wider.prepare(dbwider, dbpnet, image_size=pnet.Config.image_size, seed=seed)
+    lfw.prepare(dblfw, dbpnet, image_size=pnet.Config.image_size, seed=seed)
 
-    # save tfrecord files
-    labels = ('positive', 'negative', 'part', 'landmark')
+    # save tf record files
+    labels = ('positive', 'part', 'negative', 'landmark')
     tfrecords.write_multi_tfrecords(dbpnet.h5file, dbpnet.tfrecord, labels, seed=None)
 
-
-
+    # train
+    prefix = plib.Path(os.pardir).joinpath('mtcnn', 'PNet', 'pnet').absolute()
+    tffiles = tfrecords.getfilename(dbpnet.tfrecord, labels)
+    train(pnet.Config(), tffiles, prefix)
 
     # exit(0)
     # ------------------------------------------------------------------------------------------------------------------
