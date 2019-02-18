@@ -6,15 +6,23 @@ from train_models.mtcnn_model import *
 
 # config to train P-Net (prediction net)
 class Config:
-    image_size = 12
-    number_of_epochs = 30
-    number_of_iterations = 10000
-    lr = 0.001
-    batch_size = 384
+    def __init__(self):
+        self.image_size = 12
+        self.number_of_epochs = 30
+        self.number_of_iterations = 10000
+        self.lr = 0.001
+        self.batch_size = 384
+
+        self.pos_ratio = 1
+        self.neg_ratio = 3
+        self.part_ratio = 1
+        self.landmark_ratio = 1
+
+        self.factory = PNet
 
 
 # construct PNet
-class Graph:
+class PNet:
     def __init__(self, inputs, label=None, bbox_target=None, landmark_target=None, training=True):
         # define common param
         with slim.arg_scope([slim.conv2d],
@@ -46,13 +54,6 @@ class Graph:
             activation_summary(landmark_pred)
             print(landmark_pred.get_shape())
 
-            self.cls_pro_test = tf.squeeze(conv4_1, axis=0)
-            print(self.cls_pro_test)
-            self.bbox_pred_test = tf.squeeze(bbox_pred, axis=0)
-            print(self.bbox_pred_test)
-            self.landmark_pred_test = tf.squeeze(landmark_pred, axis=0)
-            print(self.landmark_pred_test)
-
             if training:
                 cls_prob = tf.squeeze(conv4_1, [1, 2], name='cls_prob')
                 self.cls_loss = cls_ohem(cls_prob, label)
@@ -62,3 +63,10 @@ class Graph:
                 self.landmark_loss = landmark_ohem(landmark_pred, landmark_target, label)
                 self.accuracy = cal_accuracy(cls_prob, label)
                 self.l2_loss = tf.add_n(slim.losses.get_regularization_losses())
+            else:
+                self.cls_pro_test = tf.squeeze(conv4_1, axis=0)
+                print(self.cls_pro_test)
+                self.bbox_pred_test = tf.squeeze(bbox_pred, axis=0)
+                print(self.bbox_pred_test)
+                self.landmark_pred_test = tf.squeeze(landmark_pred, axis=0)
+                print(self.landmark_pred_test)
