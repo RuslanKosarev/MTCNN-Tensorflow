@@ -8,7 +8,7 @@ from train_models.mtcnn_model import *
 class Config:
     def __init__(self):
         self.image_size = 24
-        self.number_of_epochs = 20
+        self.number_of_epochs = 30
         self.number_of_iterations = 10000
         self.lr = 0.01
         self.batch_size = 384
