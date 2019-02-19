@@ -1,6 +1,7 @@
 # coding:utf-8
 __author__ = 'Ruslan N. Kosarev'
 
+from tensorflow.contrib import slim
 from train_models.mtcnn_model import *
 
 
@@ -12,6 +13,13 @@ class Config:
         self.number_of_iterations = 10000
         self.lr = 0.01
         self.batch_size = 384
+
+        self.cls_ohem = True
+        self.cls_ohem_ratio = 0.7
+        self.bbox_ohem = False
+        self.bbox_ohem_ratio = 0.7
+        self.eps = 1e-14
+        self.lr_epochs = (6, 14, 20)
 
         self.pos_ratio = 1
         self.neg_ratio = 3
