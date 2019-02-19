@@ -72,3 +72,13 @@ if __name__ == '__main__':
 
     # ------------------------------------------------------------------------------------------------------------------
     # train O-Net (refinement net)
+
+    # prepare train data
+    examples.generate(dbwider, models=(pnet, rnet, onet), threshold=(0.3, 0.1, 0.7), min_face_size=20, stride=2)
+    lfw.prepare(dblfw, onet.dbase, image_size=onet.image_size, seed=seed)
+
+    # save tf record files
+    tfrecords.write_multi_tfrecords(onet.dbase.h5file, prefix=onet.dbase.tfprefix, seed=seed)
+
+    # train
+    train(rnet, tfprefix=onet.dbase.tfprefix, prefix=onet.prefix, seed=seed)
