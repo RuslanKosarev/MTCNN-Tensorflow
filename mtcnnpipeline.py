@@ -22,8 +22,11 @@ class DBNet:
         self.tfprefix = self.output.joinpath(label)
 
 
+# seed to initialize random generator.
+seed = None
+
+
 if __name__ == '__main__':
-    seed = None
 
     # config for input wider and lfw data
     dbwider = wider.DBWider(basedir.joinpath('wider'))
