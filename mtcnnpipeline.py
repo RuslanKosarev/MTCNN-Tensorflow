@@ -55,16 +55,20 @@ if __name__ == '__main__':
     tfrecords.write_multi_tfrecords(pnet.dbase.h5file, prefix=pnet.dbase.tfprefix, seed=seed)
 
     # train
-    train(pnet, tfprefix=pnet.dbase.tfprefix, prefix=pnet.prefix)
+    train(pnet, tfprefix=pnet.dbase.tfprefix, prefix=pnet.prefix, seed=seed)
 
     # ------------------------------------------------------------------------------------------------------------------
     # train R-Net (refinement net)
-    exit(0)
 
-    # prepare pnet examples
-    # threshold = (0.3, 0.1, 0.7)
-    # min_face_size = 20
-    # stride = 2
-    #
-    thresholds = (0.3, 0.1, 0.7)
-    examples.generate(dbwider, dbrnet, models, threshold=(0.3, 0.1, 0.7), min_face_size=20, stride=2)
+    # prepare train data
+    examples.generate(dbwider, models=(pnet, rnet), threshold=(0.3, 0.1, 0.7), min_face_size=20, stride=2)
+    lfw.prepare(dblfw, rnet.dbase, image_size=rnet.image_size, seed=seed)
+
+    # save tf record files
+    tfrecords.write_multi_tfrecords(rnet.dbase.h5file, prefix=rnet.dbase.tfprefix, seed=seed)
+
+    # train
+    train(rnet, tfprefix=rnet.dbase.tfprefix, prefix=rnet.prefix, seed=seed)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # train O-Net (refinement net)
