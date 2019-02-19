@@ -114,10 +114,11 @@ def train(config, tfprefix, prefix, display=100, seed=None):
 
     batch_size = config.batch_size
 
-    pos_batch_size = int(batch_size*config.pos_ratio)
-    part_batch_size = int(batch_size*config.part_ratio)
-    neg_batch_size = int(batch_size*config.neg_ratio)
-    landmark_batch_size = int(batch_size*config.landmark_ratio)
+    batch_size_factor = batch_size/sum([config.pos_ratio, config.part_ratio, config.neg_ratio, config.landmark_ratio])
+    pos_batch_size = int(config.pos_ratio * batch_size_factor)
+    part_batch_size = int(config.part_ratio * batch_size_factor)
+    neg_batch_size = int(config.neg_ratio * batch_size_factor)
+    landmark_batch_size = int(config.landmark_ratio * batch_size_factor)
 
     batch_sizes = [pos_batch_size, part_batch_size, neg_batch_size, landmark_batch_size]
     batch_size = sum(batch_sizes)
