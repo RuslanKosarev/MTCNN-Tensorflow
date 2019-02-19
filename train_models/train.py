@@ -1,11 +1,11 @@
 # coding:utf-8
+__author__ = 'Ruslan N. Kosarev'
 
 import numpy as np
 import cv2
 import tensorflow as tf
 from datetime import datetime
 from tensorboard.plugins import projector
-from prepare_data.read_tfrecords import read_multi_tfrecords
 from prepare_data import tfrecords
 
 
@@ -126,7 +126,7 @@ def train(config, tfprefix, prefix, display=100, seed=None):
     files = []
     for key in ('positive', 'part', 'negative', 'landmark'):
         files.append(tfrecords.getfilename(tfprefix, key))
-    tfdata = read_multi_tfrecords(config, files, batch_sizes)
+    tfdata = tfrecords.read_multi_tfrecords(config, files, batch_sizes)
 
     # define placeholder
     input_image = tf.placeholder(tf.float32, shape=[batch_size, image_size, image_size, 3], name='input_image')
