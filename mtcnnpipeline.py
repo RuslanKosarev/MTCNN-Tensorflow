@@ -22,11 +22,9 @@ class DBNet:
         self.tfprefix = self.output.joinpath(label)
 
 
-# seed to initialize random generator.
-seed = None
-
-
-if __name__ == '__main__':
+def main():
+    # seed to initialize random generator.
+    seed = None
 
     # config for input wider and lfw data
     dbwider = wider.DBWider(basedir.joinpath('wider'))
@@ -83,3 +81,7 @@ if __name__ == '__main__':
 
     # train
     train(rnet, tfprefix=onet.dbase.tfprefix, prefix=onet.prefix, seed=seed)
+
+
+if __name__ == '__main__':
+    main()
