@@ -42,8 +42,6 @@ if __name__ == '__main__':
     onet.dbase = DBNet(basedir, dirname='ONet', label='onet')
     onet.prefix = netdir.joinpath('ONet', 'onet')
 
-    config = (pnet, rnet, onet)
-
     # ------------------------------------------------------------------------------------------------------------------
     # train P-Net (prediction net)
 
