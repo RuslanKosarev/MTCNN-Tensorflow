@@ -21,6 +21,7 @@ class Config:
         self.factory = RNet
 
 
+# construct RNet
 class RNet:
     def __init__(self, inputs, label=None, bbox_target=None, landmark_target=None, training=True):
         with slim.arg_scope([slim.conv2d],
