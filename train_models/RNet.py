@@ -7,7 +7,7 @@ from train_models.mtcnn_model import *
 # config to train R-Net (prediction net)
 class Config:
     def __init__(self):
-        self.image_size = 12
+        self.image_size = 24
         self.number_of_epochs = 20
         self.number_of_iterations = 10000
         self.lr = 0.01
