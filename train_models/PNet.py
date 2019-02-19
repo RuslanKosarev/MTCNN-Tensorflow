@@ -24,7 +24,6 @@ class Config:
 # construct PNet
 class PNet:
     def __init__(self, inputs, label=None, bbox_target=None, landmark_target=None, training=True):
-        # define common param
         with slim.arg_scope([slim.conv2d],
                             activation_fn=prelu,
                             weights_initializer=slim.xavier_initializer(),
