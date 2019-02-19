@@ -20,6 +20,12 @@ class Config:
 
         self.factory = PNet
 
+        # config for database to train net
+        self.dbase = None
+
+        # prefix to save trained net
+        self.prefix = None
+
 
 # construct PNet
 class PNet:
