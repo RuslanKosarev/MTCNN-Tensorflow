@@ -26,7 +26,7 @@ if __name__ == '__main__':
     seed = None
 
     # config for input wider and lfw data
-    dbwider = wider.DBWider(basedir.joinpath('WIDER_train'))
+    dbwider = wider.DBWider(basedir.joinpath('wider'))
     dblfw = lfw.DBLFW(basedir.joinpath('lfw'))
 
     # initialize config for datasets and nets
