@@ -19,11 +19,11 @@ def generate(dbwider, models, threshold=(0.6, 0.6, 0.7), min_face_size=25, strid
     detectors = [None, None, None]
 
     if len(models) < 2:
-        raise ValueError('input list of models is empty')
+        raise ValueError('the number of models must be 2 or 3.')
 
     batch_size = 256
 
-    # load P-Net model to generate data to train R-Net
+    # load P-Net model (detectors[0]) to generate data to train R-Net or O-Net
     config = models[0]
     model_path = '{}-{}'.format(config.prefix, config.number_of_epochs)
 
@@ -35,7 +35,7 @@ def generate(dbwider, models, threshold=(0.6, 0.6, 0.7), min_face_size=25, strid
     image_size = models[1].image_size
     h5file = models[1].dbase.h5file
 
-    # load R-Net model to generate data to train O-Net
+    # load R-Net model (detectors[1]) to generate data to train O-Net
     if len(models) > 2:
         config = models[1]
         model_path = '{}-{}'.format(config.prefix, config.number_of_epochs)
