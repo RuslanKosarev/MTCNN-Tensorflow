@@ -9,23 +9,17 @@ from tensorboard.plugins import projector
 from prepare_data import tfrecords
 
 
-def train_model(base_lr, loss, iterations):
+def train_model(loss, config):
     """
 
-    :param base_lr:
     :param loss:
-    :param iterations:
+    :param config:
     :return:
     """
-    from train_models.MTCNN_config import config
     lr_factor = 0.1
     global_step = tf.Variable(0, trainable=False)
-    # LR_EPOCH [8,14]
-    # boundaried [num_batch,num_batch]
-    boundaries = [int(epoch * iterations) for epoch in config.LR_EPOCH]
-    # lr_values[0.01,0.001,0.0001,0.00001]
-    lr_values = [base_lr * (lr_factor ** x) for x in range(0, len(config.LR_EPOCH) + 1)]
-    # control learning rate
+    boundaries = [int(epoch * config.number_of_iterations) for epoch in config.lr_epochs]
+    lr_values = [config.lr * (lr_factor ** x) for x in range(0, len(config.lr_epochs) + 1)]
     lr_op = tf.train.piecewise_constant(global_step, boundaries, lr_values)
     optimizer = tf.train.MomentumOptimizer(lr_op, 0.9)
     train_op = optimizer.minimize(loss, global_step)
@@ -92,7 +86,7 @@ def train(config, tfprefix, prefix, display=100, seed=None):
     """
 
     :param config:
-    :param tfrecords:
+    :param tfprefix:
     :param prefix:
     :param display:
     :param seed:
@@ -140,7 +134,7 @@ def train(config, tfprefix, prefix, display=100, seed=None):
 
     # initialize total loss
     total_loss = radio_cls_loss * net.cls_loss + radio_bbox_loss * net.bbox_loss + radio_landmark_loss * net.landmark_loss + net.l2_loss
-    train_op, lr_op = train_model(config.lr, total_loss, config.number_of_iterations)
+    train_op, lr_op = train_model(total_loss, config)
 
     init = tf.global_variables_initializer()
     sess = tf.Session()

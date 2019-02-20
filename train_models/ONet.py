@@ -1,6 +1,7 @@
 # coding:utf-8
 __author__ = 'Ruslan N. Kosarev'
 
+from tensorflow.contrib import slim
 from train_models.mtcnn_model import *
 
 
@@ -10,8 +11,9 @@ class Config:
         self.image_size = 48
         self.number_of_epochs = 30
         self.number_of_iterations = 10000
-        self.lr = 0.01
         self.batch_size = 384
+        self.lr = 0.01
+        self.lr_epochs = (6, 14, 20)
 
         self.pos_ratio = 1
         self.neg_ratio = 3
