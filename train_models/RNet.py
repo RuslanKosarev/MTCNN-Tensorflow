@@ -10,7 +10,7 @@ class Config:
     def __init__(self):
         self.image_size = 24
         self.number_of_epochs = 30
-        self.number_of_iterations = 10000
+        self.number_of_iterations = 5000
         self.batch_size = 384
         self.lr = 0.01
         self.lr_epochs = (6, 14, 20)
