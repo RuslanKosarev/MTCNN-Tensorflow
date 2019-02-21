@@ -95,7 +95,7 @@ def train(config, tfprefix, prefix, display=100, seed=None):
     np.random.seed(seed=seed)
 
     if not prefix.parent.exists():
-        prefix.parent.mkdir(parent=True)
+        prefix.parent.mkdir(parents=True)
 
     logdir = prefix.parent.joinpath('logs')
     if not logdir.exists():
