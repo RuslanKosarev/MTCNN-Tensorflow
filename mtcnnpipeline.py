@@ -46,7 +46,7 @@ def main():
     # ------------------------------------------------------------------------------------------------------------------
     # train P-Net (prediction net)
 
-    # prepare train data
+    # # prepare train data
     wider.prepare(dbwider, pnet.dbase, image_size=pnet.image_size, seed=seed)
     lfw.prepare(dblfw, pnet.dbase, image_size=pnet.image_size, seed=seed)
 
@@ -80,7 +80,7 @@ def main():
     tfrecords.write_multi_tfrecords(onet.dbase.h5file, prefix=onet.dbase.tfprefix, seed=seed)
 
     # train
-    train(rnet, tfprefix=onet.dbase.tfprefix, prefix=onet.prefix, seed=seed)
+    train(onet, tfprefix=onet.dbase.tfprefix, prefix=onet.prefix, seed=seed)
 
 
 if __name__ == '__main__':
