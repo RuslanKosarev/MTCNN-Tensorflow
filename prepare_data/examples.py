@@ -14,7 +14,7 @@ from prepare_data.utils import convert_to_square
 from prepare_data.data_utils import IoU
 
 
-def generate(dbwider, models, threshold=(0.6, 0.6, 0.7), min_face_size=25, stride=2, slide_window=False):
+def generate(dbwider, models, threshold=(0.6, 0.7, 0.7), min_face_size=25, stride=2, slide_window=False):
 
     detectors = [None, None, None]
 
